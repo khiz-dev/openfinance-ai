@@ -62,7 +62,7 @@ export function SimulatorWidget({ userId }: { userId: number }) {
       <div className="fixed bottom-5 right-5 z-50">
         <button
           onClick={() => setOpen(true)}
-          className="px-4 py-2.5 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl shadow-lg transition-all hover:shadow-xl hover:scale-105 flex items-center gap-2"
+          className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-medium rounded-full shadow-lg transition-all hover:shadow-xl hover:scale-105 flex items-center gap-2"
         >
           <span>⚡</span> Simulator
         </button>
