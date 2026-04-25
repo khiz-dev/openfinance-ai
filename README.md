@@ -1,138 +1,116 @@
-# Capital OS
+# OpenFinance AI
 
-AI-powered personal finance platform for the UK. Connect your bank accounts and use AI agents to manage your finances.
+AI-powered personal finance automation platform — **Zapier + AI + Banking Automation**.
 
-## Stack
+## Features
 
-- **Backend**: Python 3.11 / FastAPI / SQLAlchemy / SQLite (aiosqlite)
-- **Frontend**: React 18 / Vite / TypeScript / Tailwind
-- **AI**: OpenAI GPT-4o with function calling / LangChain tools
-- **Banking**: Mock TrueLayer (demo) — 6 UK banks with fake transactions
+- **Bank Account Aggregation** — simulated multi-account banking (current, savings, investment, credit)
+- **Real LLM-Powered Agents** — AI agents using OpenAI/Anthropic for financial reasoning
+- **Built-in Agents** — Affordability AI, Spending Behavior, Subscription Tracker, Payday Monitor, Finance Manager, Invoice Executor
+- **Custom Agent Builder** — users create their own agents with natural language goals
+- **Payment Simulation** — payments, transfers, direct debits (simulated)
+- **Email Integration** — fake email scanning for invoices and subscription detection
+- **Transaction Simulator** — inject transactions that trigger agent automation
+- **Policy Engine** — validates all AI plans before execution
+- **Full Audit Trail** — every action logged and explainable
 
 ## Quick Start
 
 ```bash
-# 1. Start backend (Docker)
-docker compose up --build -d
+# 1. Install dependencies (requires Python 3.12+)
+poetry install
 
-# 2. Start frontend (separate terminal)
-cd frontend && npm install && npm run dev
+# 2. Configure environment
+cp .env.example .env
+# Edit .env and add your OPENAI_API_KEY
+
+# 3. Start the server (auto-seeds fake data)
+poetry run uvicorn app.main:app --reload
+
+# 4. Open Swagger docs
+open http://localhost:8000/docs
 ```
 
-- Backend: http://localhost:8000
-- Frontend: http://localhost:5173
+## Demo Flow
 
-## What's Working
+1. Start app → fake data seeded automatically
+2. `GET /users/1/summary` → view financial overview
+3. `GET /agents/builtin` → see available AI agents
+4. `POST /users/1/agents/1/run` → run Affordability AI
+5. `POST /users/1/agents/4/enable` → enable Payday Monitor
+6. Simulate salary: `POST /simulator/transactions` with salary data → Payday Monitor triggers
+7. `GET /users/1/emails` → see fake invoices
+8. `POST /users/1/agents/6/run` → run Invoice Executor
+9. `GET /users/1/agent-runs` → view all agent execution logs
 
-### Backend API
-- `POST /auth/register` — Register
-- `POST /auth/login` — Login (JWT)
-- `GET /banks/providers` — List mock UK banks
-- `POST /banks/bank-connect` — Connect a mock bank (Monzo, Barclays, HSBC, etc.)
-- `GET /banks/balances` — Get all balances
-- `GET /banks/transactions` — Get transactions
-- `GET /agents` — List marketplace agents
-- `POST /agents` — Create custom agent (auto-generates system prompt + tools)
-- `POST /agents/{id}/subscribe` — Subscribe to agent
-- `POST /agents/{id}/chat` — Chat with agent (AI-powered with tool calling)
-- `GET /agents/{id}/data` — Get agent data directly
+## API Endpoints
 
-### AI Agents
+| Endpoint | Method | Description |
+|---|---|---|
+| `/users` | GET/POST | User management |
+| `/users/{id}/summary` | GET | Financial summary with health score |
+| `/users/{id}/transactions` | GET | Transaction history |
+| `/users/{id}/insights` | GET | Computed financial insights |
+| `/users/{id}/subscriptions` | GET | Detected subscriptions |
+| `/agents` | GET | All agent definitions |
+| `/agents/builtin` | GET | Built-in AI agents |
+| `/users/{id}/agents` | GET/POST | User agents (built-in + custom) |
+| `/users/{id}/agents/{id}/run` | POST | Execute an agent (LLM-powered) |
+| `/users/{id}/agents/{id}/enable` | POST | Enable agent |
+| `/users/{id}/agents/{id}/disable` | POST | Disable agent |
+| `/users/{id}/agent-runs` | GET | Agent execution logs |
+| `/users/{id}/payments` | POST | Create payment instruction |
+| `/users/{id}/transfers` | POST | Transfer between accounts |
+| `/users/{id}/direct-debits` | POST | Set up direct debit |
+| `/users/{id}/email/connect` | POST | Connect email (fake) |
+| `/users/{id}/emails` | GET | List email messages |
+| `/simulator/transactions` | POST | Simulate a transaction |
+| `/users/{id}/audit-logs` | GET | Audit trail |
 
-**Pre-built agents:**
-1. **Affordability Agent** — Ask anything about what you can afford. Uses `get_summary` + `get_affordability_analysis`.
-2. **Payday Monitor** — Tracks salary deposits, alerts on delay. Uses `get_payday_analysis` + `get_all_transactions`.
-3. **Spending Insights** — Deep-dive into spending by category, merchant, trend. Uses all tools.
-4. **Budget Guardian** — Watches spending vs budgets, warns before overspend.
-
-**Custom agents:** Users describe a goal and frequency → system auto-generates system prompt and selects the right tools.
-
-### Agent Tools (available to all agents)
-- `get_summary` — Full financial overview: balances, income, spending, categories, recurring
-- `get_all_transactions` — Browse ALL transactions (up to 500) across all accounts
-- `get_payday_analysis` — Salary deposit status and patterns
-- `get_affordability_analysis` — Check if a purchase amount is affordable
-
-## Enable Real AI Responses
-
-Add to `backend/.env`:
-```env
-OPENAI_API_KEY=sk-...
-```
-
-Without `OPENAI_API_KEY`, agents return a placeholder message. With it, agents use GPT-4o with function calling to browse transactions and provide AI-powered answers.
-
-## Connect Real Open Banking
-
-The mock service can be replaced with TrueLayer by updating `app/services/truelayer.py`. Set environment variables:
-```env
-TRUELAYER_CLIENT_ID=...
-TRUELAYER_CLIENT_SECRET=...
-```
-
-## Remaining Work
-
-### High Priority
-- [ ] **Frontend UI** — Currently minimal. Needs full UI for: dashboard, bank connection flow, agent marketplace, agent chat, custom agent builder
-- [ ] **Agent history** — Save chat history, show in chat UI
-- [ ] **Real transaction categorization** — Mock uses static categories; real TrueLayer returns categorized transactions
-- [ ] **Payday alerts** — Background scheduler (APScheduler) to check for late salary daily and send alerts
-- [ ] **Agent persistence** — Custom agents saved to DB, can be resubscribed
-
-### Medium Priority
-- [ ] **Streaming chat** — SSE streaming for real-time AI responses
-- [ ] **Agent triggers** — Cron-based agents (hourly/daily/weekly) that run in background and push alerts
-- [ ] **Budget limits per category** — User sets limits, Budget Guardian monitors
-- [ ] **Multiple users / workspaces**
-
-### Nice to Have
-- [ ] **Agent sharing** — Publish custom agents to marketplace
-- [ ] **Agent templates** — Pre-built templates for common workflows (tax prep, holiday budgeting, etc.)
-- [ ] **RAG on transaction history** — Vector store for semantic search over transactions
-- [ ] **Transaction search** — Natural language search: "how much did I spend on groceries last month?"
-
-## Project Structure
+## Architecture
 
 ```
-backend/
-  app/
-    main.py              # FastAPI app
-    config.py            # Settings from env
-    database.py          # SQLite async setup
-    models.py            # SQLAlchemy models
-    schemas.py           # Pydantic schemas
-    auth.py              # JWT auth
-    routers/
-      auth.py            # /auth endpoints
-      banks.py           # /banks endpoints
-      agents.py          # /agents endpoints
-    services/
-      truelayer.py       # Mock bank service
-      financial_tools.py # AI tools (get_summary, etc.)
-      agent.py           # Agent execution with OpenAI
-  requirements.txt
-  Dockerfile
-  test_agent.py          # API test script
-
-frontend/               # React/Vite app (needs work)
-  src/
-    pages/               # Landing, Login, Register, Dashboard, Agents, Chat, CreateAgent
-    lib/api.ts           # API client
-    contexts/            # Auth context
-
-docker-compose.yml
-README.md
+app/
+  main.py              # FastAPI app + startup
+  config.py            # Settings (env-based)
+  database.py          # SQLAlchemy setup
+  seed.py              # Fake data seeder
+  models/              # SQLAlchemy ORM models
+  schemas/             # Pydantic request/response schemas
+  routers/             # API route handlers
+  llm/                 # LLM abstraction (OpenAI, Anthropic)
+  agents/              # Agent registry + runner
+  planner/             # LLM-powered planning + policy engine
+  executor/            # Safe action execution
+  services/            # Financial context builder + tools
+  simulator/           # Transaction simulation
 ```
 
-## Database
+## Agent Execution Flow
 
-SQLite file: `backend/capitalos.db` (created on first run). To reset:
-```bash
-rm backend/capitalos.db && docker compose restart
+```
+User Request → Build Financial Context → LLM Planner → Structured Plan (JSON)
+  → Policy Engine Validation → Tool Executor → Audit Log → Result
 ```
 
-## Test Script
+## Running Tests
 
 ```bash
-cd backend && python3 test_agent.py
+poetry run pytest tests/ -v
 ```
+
+## Docker
+
+```bash
+docker compose up --build
+```
+
+## Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `LLM_PROVIDER` | LLM provider (openai/anthropic) | openai |
+| `OPENAI_API_KEY` | OpenAI API key | — |
+| `ANTHROPIC_API_KEY` | Anthropic API key | — |
+| `LLM_MODEL` | Model name | gpt-4.1-mini |
+| `DATABASE_URL` | SQLite database path | sqlite:///./openfinance.db |

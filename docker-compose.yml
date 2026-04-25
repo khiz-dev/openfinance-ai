@@ -1,26 +1,30 @@
-version: "3.9"
-
 services:
-  backend:
+  api:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
-    environment:
-      DATABASE_URL: sqlite+aiosqlite:///./capitalos.db
-      SECRET_KEY: capital-os-dev-secret-key-2026
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      TRUELAYER_CLIENT_ID: ${TRUELAYER_CLIENT_ID:-}
-      TRUELAYER_CLIENT_SECRET: ${TRUELAYER_CLIENT_SECRET:-}
-      TRUELAYER_REDIRECT_URI: http://localhost:8000/banks/callback
-      TRUELAYER_ENV: sandbox
-      FRONTEND_URL: http://localhost:5173
+    env_file:
+      - .env
     volumes:
-      - ./backend:/app
+      - db-data:/app/data
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
-      interval: 10s
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
       timeout: 5s
-      retries: 5
+      start_period: 10s
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: nginx
+    ports:
+      - "3000:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  db-data:

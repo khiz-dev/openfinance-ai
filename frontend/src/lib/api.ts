@@ -1,45 +1,85 @@
-import axios from 'axios';
+const BASE = import.meta.env.VITE_API_URL || '/api';
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
-  headers: { 'Content-Type': 'application/json' },
-});
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `Request failed: ${res.status}`);
+  }
+  return res.json();
+}
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+export const api = {
+  // Users
+  getUsers: () => request<any[]>('/users'),
+  getUser: (id: number) => request<any>(`/users/${id}`),
 
-export const authApi = {
-  register: (email: string, password: string, name: string) =>
-    api.post('/auth/register', { email, password, name }),
-  login: (email: string, password: string) =>
-    api.post('/auth/login', { email, password }),
-  me: () => api.get('/auth/me'),
+  // Financial
+  getSummary: (id: number) => request<any>(`/users/${id}/summary`),
+  getTransactions: (id: number) => request<any[]>(`/users/${id}/transactions`),
+  getInsights: (id: number) => request<any>(`/users/${id}/insights`),
+  getSubscriptions: (id: number) => request<any[]>(`/users/${id}/subscriptions`),
+  getAccounts: (id: number) => request<any[]>(`/users/${id}/accounts`),
+
+  // Account purpose
+  updateAccountPurpose: (userId: number, accountId: number, purpose: string) =>
+    request<any>(`/users/${userId}/accounts/${accountId}/purpose`, {
+      method: 'PUT',
+      body: JSON.stringify({ purpose }),
+    }),
+
+  // Approved Suppliers
+  getSuppliers: (userId: number) => request<any[]>(`/users/${userId}/suppliers`),
+  createSupplier: (userId: number, data: any) =>
+    request<any>(`/users/${userId}/suppliers`, { method: 'POST', body: JSON.stringify(data) }),
+  deleteSupplier: (userId: number, supplierId: number) =>
+    request<any>(`/users/${userId}/suppliers/${supplierId}`, { method: 'DELETE' }),
+
+  // Agents
+  getAllAgents: () => request<any[]>('/agents'),
+  getBuiltinAgents: () => request<any[]>('/agents/builtin'),
+  getUserAgents: (id: number) => request<any[]>(`/users/${id}/agents`),
+  runAgent: (userId: number, agentId: number, extraContext?: Record<string, any>) =>
+    request<any>(`/users/${userId}/agents/${agentId}/run`, {
+      method: 'POST',
+      body: extraContext ? JSON.stringify({ extra_context: extraContext }) : undefined,
+    }),
+  enableAgent: (userId: number, agentId: number) =>
+    request<any>(`/users/${userId}/agents/${agentId}/enable`, { method: 'POST' }),
+  disableAgent: (userId: number, agentId: number) =>
+    request<any>(`/users/${userId}/agents/${agentId}/disable`, { method: 'POST' }),
+  createAgent: (userId: number, data: any) =>
+    request<any>(`/users/${userId}/agents`, { method: 'POST', body: JSON.stringify(data) }),
+  getAgentRuns: (userId: number) => request<any[]>(`/users/${userId}/agent-runs`),
+  getAgentRun: (userId: number, runId: number) => request<any>(`/users/${userId}/agent-runs/${runId}`),
+
+  // Chat
+  chat: (userId: number, message: string, history: { role: string; content: string }[] = []) =>
+    request<{ reply: string; data_referenced: string[] }>(`/users/${userId}/chat`, {
+      method: 'POST',
+      body: JSON.stringify({ message, conversation_history: history }),
+    }),
+
+  // Payments
+  createPayment: (userId: number, data: any) =>
+    request<any>(`/users/${userId}/payments`, { method: 'POST', body: JSON.stringify(data) }),
+  createTransfer: (userId: number, data: any) =>
+    request<any>(`/users/${userId}/transfers`, { method: 'POST', body: JSON.stringify(data) }),
+  createDirectDebit: (userId: number, data: any) =>
+    request<any>(`/users/${userId}/direct-debits`, { method: 'POST', body: JSON.stringify(data) }),
+
+  // Emails
+  getEmails: (userId: number) => request<any[]>(`/users/${userId}/emails`),
+  connectEmail: (userId: number, data: any) =>
+    request<any>(`/users/${userId}/email/connect`, { method: 'POST', body: JSON.stringify(data) }),
+
+  // Simulator
+  simulateTransaction: (data: any) =>
+    request<any>('/simulator/transactions', { method: 'POST', body: JSON.stringify(data) }),
+
+  // Audit
+  getAuditLogs: (userId: number) => request<any[]>(`/users/${userId}/audit-logs`),
 };
-
-export const banksApi = {
-  getProviders: () => api.get('/banks/providers'),
-  listAccounts: () => api.get('/banks/accounts'),
-  getBalances: () => api.get('/banks/balances'),
-  removeAccount: (id: number) => api.delete(`/banks/accounts/${id}`),
-  getTransactions: (accountId: number, days?: number) =>
-    api.get('/banks/transactions', { params: { account_id: accountId, days: days || 30 } }),
-  mockBankConnect: (providerId: string, providerName: string) =>
-    api.post('/banks/bank-connect', null, { params: { provider_id: providerId, provider_name: providerName } }),
-};
-
-export const agentsApi = {
-  list: () => api.get('/agents'),
-  create: (data: { name: string; description: string; goal: string; trigger_frequency?: string; trigger_config?: any }) =>
-    api.post('/agents', data),
-  subscribe: (agentId: number, config?: any) =>
-    api.post('/agents/subscribe', { agent_id: agentId, config }),
-  myAgents: () => api.get('/agents/my'),
-  unsubscribe: (agentId: number) => api.delete(`/agents/${agentId}/unsubscribe`),
-  chat: (agentId: number, message: string, model?: string) =>
-    api.post(`/agents/${agentId}/chat`, { message, model: model || 'gpt-4o' }),
-};
-
-export default api;
