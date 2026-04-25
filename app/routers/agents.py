@@ -78,6 +78,34 @@ def disable_agent(user_id: int, agent_id: int, db: Session = Depends(get_db)):
     return {"status": "disabled", "agent_id": agent_id}
 
 
+@router.put("/users/{user_id}/agents/{agent_id}/settings")
+def update_agent_settings(user_id: int, agent_id: int, body: dict = Body(...), db: Session = Depends(get_db)):
+    """Update agent settings like execution_mode and requires_approval."""
+    agent = _get_agent(db, agent_id)
+    if "execution_mode" in body:
+        agent.execution_mode = ExecutionMode(body["execution_mode"])
+    if "requires_approval" in body:
+        agent.requires_approval = body["requires_approval"]
+    db.commit()
+    return {
+        "agent_id": agent_id,
+        "execution_mode": agent.execution_mode.value if hasattr(agent.execution_mode, 'value') else str(agent.execution_mode),
+        "requires_approval": agent.requires_approval,
+    }
+
+
+@router.post("/users/{user_id}/agents/approve-action")
+def approve_action(user_id: int, body: dict = Body(...), db: Session = Depends(get_db)):
+    """Approve a pending agent action (e.g. payment instruction). Currently simulated."""
+    _require_user(db, user_id)
+    action = body.get("action", {})
+    return {
+        "status": "approved",
+        "message": f"Payment of £{action.get('amount', 0):.2f} to {action.get('payee', 'unknown')} has been approved and will be processed.",
+        "action": action,
+    }
+
+
 @router.post("/users/{user_id}/agents/{agent_id}/run")
 def run_agent(
     user_id: int,

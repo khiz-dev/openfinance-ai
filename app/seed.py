@@ -290,6 +290,13 @@ def _seed(db: Session) -> None:
         )
         db.add(agent)
 
+    # Rename any lingering "Invoice Tracker" to "Invoice Manager"
+    old_tracker = db.query(AgentDefinition).filter(AgentDefinition.name == "Invoice Tracker").first()
+    if old_tracker:
+        old_tracker.name = "Invoice Manager"
+        old_tracker.description = "Finds invoices from emails, shows previews with payment details, and initiates payments from configured accounts."
+        db.commit()
+
     db.commit()
     logger.info("Seeded business '%s' with accounts, transactions, emails, subscriptions, suppliers, and agents", user.name)
 

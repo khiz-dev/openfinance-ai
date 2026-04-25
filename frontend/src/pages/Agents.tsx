@@ -309,7 +309,40 @@ export default function Agents({ userId }: { userId: number }) {
   )
 }
 
+function formatAction(a: any): { payee: string; amount: string; description: string; params: any } {
+  if (a.description) {
+    const match = a.description.match(/payment.*?for\s+(.+?)\s+for\s+£([\d,.]+)/i)
+    if (match) return { payee: match[1], amount: match[2], description: a.description, params: a.params || a }
+    return { payee: '', amount: '', description: a.description, params: a.params || a }
+  }
+  if (a.params) {
+    return {
+      payee: a.params.payee || a.params.payee_name || '',
+      amount: a.params.amount ? `${a.params.amount}` : '',
+      description: `${a.tool || 'Action'}: ${a.params.payee || a.params.payee_name || 'Unknown'}`,
+      params: a.params,
+    }
+  }
+  return { payee: '', amount: '', description: JSON.stringify(a), params: a }
+}
+
 function AgentResultUI({ result, onDismiss }: { result: any; onDismiss: () => void }) {
+  const [approvedActions, setApprovedActions] = useState<Set<number>>(new Set())
+  const [approvingIdx, setApprovingIdx] = useState<number | null>(null)
+
+  const handleApprove = async (action: any, idx: number) => {
+    setApprovingIdx(idx)
+    try {
+      const formatted = formatAction(action)
+      await api.approveAction(1, { payee: formatted.payee, amount: formatted.amount, ...formatted.params })
+      setApprovedActions(prev => new Set(prev).add(idx))
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setApprovingIdx(null)
+    }
+  }
+
   if (result.error && !result.summary) {
     return (
       <div className="bg-white border border-rose-200 rounded-2xl shadow-sm p-5 space-y-3">
@@ -360,33 +393,72 @@ function AgentResultUI({ result, onDismiss }: { result: any; onDismiss: () => vo
       )}
 
       {result.executed_actions?.length > 0 && (
-        <div className="space-y-1">
-          <p className="text-xs text-gray-400 uppercase">Actions Taken</p>
-          {result.executed_actions.map((a: any, i: number) => (
-            <div key={i} className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-2 rounded-lg">
-              {a.description || `${a.tool}: ${JSON.stringify(a.params)}`}
-            </div>
-          ))}
+        <div className="space-y-2">
+          <p className="text-xs text-gray-400 uppercase font-semibold tracking-wider">Actions Taken</p>
+          {result.executed_actions.map((a: any, i: number) => {
+            const action = formatAction(a)
+            return (
+              <div key={i} className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+                  <span className="text-emerald-600 text-sm">✓</span>
+                </div>
+                <p className="text-sm text-emerald-800 flex-1">{action.description}</p>
+              </div>
+            )
+          })}
         </div>
       )}
 
       {result.approval_required_actions?.length > 0 && (
-        <div className="space-y-1">
-          <p className="text-xs text-gray-400 uppercase">Awaiting Approval</p>
-          {result.approval_required_actions.map((a: any, i: number) => (
-            <div key={i} className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-3 py-2 rounded-lg">
-              {a.description || `${a.tool}: ${JSON.stringify(a.params)}`}
-            </div>
-          ))}
+        <div className="space-y-2">
+          <p className="text-xs text-gray-400 uppercase font-semibold tracking-wider">Pending Approval</p>
+          {result.approval_required_actions.map((a: any, i: number) => {
+            const action = formatAction(a)
+            const isApproved = approvedActions.has(i)
+            return (
+              <div key={i} className={`border rounded-xl p-4 ${isApproved ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isApproved ? 'bg-emerald-100' : 'bg-amber-100'}`}>
+                      <span className="text-sm">{isApproved ? '✓' : '⏳'}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className={`text-sm font-medium ${isApproved ? 'text-emerald-800' : 'text-gray-800'}`}>
+                        {action.description}
+                      </p>
+                      {isApproved && <p className="text-xs text-emerald-600 mt-1">Payment approved and will be processed</p>}
+                    </div>
+                  </div>
+                  {!isApproved && (
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        onClick={() => handleApprove(a, i)}
+                        disabled={approvingIdx === i}
+                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white text-xs font-medium rounded-lg transition-colors shadow-sm"
+                      >
+                        {approvingIdx === i ? 'Approving...' : 'Approve'}
+                      </button>
+                      <button className="px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-600 text-xs font-medium rounded-lg transition-colors border border-gray-200">
+                        Reject
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
 
       {result.risk_flags?.length > 0 && (
-        <div className="space-y-1">
-          <p className="text-xs text-gray-400 uppercase">Risk Flags</p>
+        <div className="space-y-2">
+          <p className="text-xs text-gray-400 uppercase font-semibold tracking-wider">Risk Flags</p>
           {result.risk_flags.map((f: string, i: number) => (
-            <div key={i} className="text-xs bg-rose-50 text-rose-700 border border-rose-200 px-3 py-2 rounded-lg flex items-center gap-2">
-              <span>🔴</span> {f}
+            <div key={i} className="bg-rose-50 border border-rose-200 rounded-xl p-3 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center shrink-0">
+                <span className="text-sm">⚠</span>
+              </div>
+              <p className="text-sm text-rose-700">{f}</p>
             </div>
           ))}
         </div>
@@ -405,8 +477,23 @@ function AgentResultUI({ result, onDismiss }: { result: any; onDismiss: () => vo
 function AgentCard({ agent, running, onRun, onToggle }: {
   agent: any; running: boolean; onRun: (agent: any) => void; onToggle: (id: number, enabled: boolean) => void
 }) {
+  const [autoMode, setAutoMode] = useState(agent.requires_approval === false)
   const mode = MODE_LABELS[agent.execution_mode] || { label: agent.execution_mode, color: 'gray' }
   const trigger = TRIGGER_LABELS[agent.trigger_type] || agent.trigger_type
+
+  const handleAutoToggle = async () => {
+    const newValue = !autoMode
+    setAutoMode(newValue)
+    try {
+      await api.updateAgentSettings(1, agent.id, {
+        requires_approval: !newValue,
+        execution_mode: newValue ? 'auto_execute' : 'suggest_only',
+      })
+    } catch (e) {
+      setAutoMode(!newValue)
+      console.error(e)
+    }
+  }
 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 space-y-3 hover:shadow-md transition-shadow">
@@ -422,6 +509,21 @@ function AgentCard({ agent, running, onRun, onToggle }: {
         <span className="text-gray-300">·</span>
         <Badge color={mode.color}>{mode.label}</Badge>
       </div>
+
+      {/* Auto-execute toggle */}
+      <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+        <div>
+          <p className="text-xs font-medium text-gray-700">Full AI Control</p>
+          <p className="text-[10px] text-gray-400">Execute actions without asking for approval</p>
+        </div>
+        <button
+          onClick={handleAutoToggle}
+          className={`relative w-10 h-5 rounded-full transition-colors ${autoMode ? 'bg-blue-600' : 'bg-gray-300'}`}
+        >
+          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${autoMode ? 'translate-x-5' : 'translate-x-0.5'}`} />
+        </button>
+      </div>
+
       <div className="flex gap-2">
         <button onClick={() => onRun(agent)} disabled={running || !agent.is_enabled}
           className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 text-white text-xs font-medium rounded-lg transition-colors shadow-sm">

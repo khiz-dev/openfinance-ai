@@ -55,6 +55,16 @@ export const api = {
     request<any>(`/users/${userId}/agents`, { method: 'POST', body: JSON.stringify(data) }),
   getAgentRuns: (userId: number) => request<any[]>(`/users/${userId}/agent-runs`),
   getAgentRun: (userId: number, runId: number) => request<any>(`/users/${userId}/agent-runs/${runId}`),
+  updateAgentSettings: (userId: number, agentId: number, settings: { execution_mode?: string; requires_approval?: boolean }) =>
+    request<any>(`/users/${userId}/agents/${agentId}/settings`, {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    }),
+  approveAction: (userId: number, action: any) =>
+    request<any>(`/users/${userId}/agents/approve-action`, {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+    }),
 
   // Chat
   chat: (userId: number, message: string, history: { role: string; content: string }[] = []) =>
