@@ -1,9 +1,12 @@
 __pycache__/
 *.pyc
 .env
-.venv/
-venv/
+*.db
 *.egg-info/
+.mypy_cache/
+.ruff_cache/
+node_modules/
 dist/
 build/
-node_modules/
+*.log
+*.db

@@ -21,12 +21,13 @@ export const authApi = {
 
 export const banksApi = {
   getProviders: () => api.get('/banks/providers'),
-  connect: (state: string) => api.get('/banks/connect', { params: { state } }),
-  addAccount: (data: any) => api.post('/banks/accounts', null, { params: data }),
   listAccounts: () => api.get('/banks/accounts'),
+  getBalances: () => api.get('/banks/balances'),
   removeAccount: (id: number) => api.delete(`/banks/accounts/${id}`),
   getTransactions: (accountId: number, days?: number) =>
     api.get('/banks/transactions', { params: { account_id: accountId, days: days || 30 } }),
+  mockBankConnect: (providerId: string, providerName: string) =>
+    api.post('/banks/bank-connect', null, { params: { provider_id: providerId, provider_name: providerName } }),
 };
 
 export const agentsApi = {
@@ -39,8 +40,6 @@ export const agentsApi = {
   unsubscribe: (agentId: number) => api.delete(`/agents/${agentId}/unsubscribe`),
   chat: (agentId: number, message: string, model?: string) =>
     api.post(`/agents/${agentId}/chat`, { message, model: model || 'gpt-4o' }),
-  chatStream: (agentId: number, message: string, model?: string) =>
-    new EventSource(`${api.defaults.baseURL}/agents/${agentId}/chat/stream?message=${encodeURIComponent(message)}&model=${model || 'gpt-4o'}`),
 };
 
 export default api;

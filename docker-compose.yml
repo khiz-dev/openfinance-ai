@@ -1,22 +1,6 @@
 version: "3.9"
 
 services:
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password123
-      POSTGRES_DB: capitalos
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   backend:
     build:
       context: ./backend
@@ -24,7 +8,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:password123@db:5432/capitalos
+      DATABASE_URL: sqlite+aiosqlite:///./capitalos.db
       SECRET_KEY: capital-os-dev-secret-key-2026
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
@@ -33,14 +17,10 @@ services:
       TRUELAYER_REDIRECT_URI: http://localhost:8000/banks/callback
       TRUELAYER_ENV: sandbox
       FRONTEND_URL: http://localhost:5173
-    depends_on:
-      db:
-        condition: service_healthy
+    volumes:
+      - ./backend:/app
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
-
-volumes:
-  postgres_data:
