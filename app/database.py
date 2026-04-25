@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.config import get_settings
 
 settings = get_settings()
+
+db_url = settings.DATABASE_URL
+if db_url.startswith("sqlite:///./"):
+    db_path = Path(db_url.replace("sqlite:///./", ""))
+    db_path.parent.mkdir(parents=True, exist_ok=True)
 
 engine = create_engine(
     settings.DATABASE_URL,
