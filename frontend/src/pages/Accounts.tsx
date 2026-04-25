@@ -25,15 +25,24 @@ type Transaction = {
   [key: string]: any
 }
 
+type MonthGroup = {
+  key: string
+  label: string
+  transactions: Transaction[]
+  credits: number
+  debits: number
+  net: number
+}
+
 const TYPE_BORDERS: Record<string, string> = {
-  current: 'border-indigo-500/60',
+  current: 'border-amber-500/60',
   savings: 'border-emerald-500/60',
   investment: 'border-purple-500/60',
   credit: 'border-rose-500/60',
 }
 
 const TYPE_BADGE_COLORS: Record<string, string> = {
-  current: 'indigo',
+  current: 'amber',
   savings: 'green',
   investment: 'blue',
   credit: 'red',
@@ -60,47 +69,92 @@ const PROVIDER_LOGOS: Record<string, string> = {
   'NatWest': '🏦',
 }
 
-function TransactionTable({ transactions, accounts }: { transactions: Transaction[]; accounts?: Account[] }) {
-  const accountMap = accounts ? Object.fromEntries(accounts.map((a) => [a.id, a.name])) : null
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
-  if (transactions.length === 0) {
-    return <p className="text-sm text-gray-500 py-4 text-center">No transactions found</p>
+function groupByMonth(txns: Transaction[]): MonthGroup[] {
+  const map = new Map<string, Transaction[]>()
+  for (const tx of txns) {
+    const d = new Date(tx.date)
+    const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`
+    if (!map.has(key)) map.set(key, [])
+    map.get(key)!.push(tx)
   }
+  const groups: MonthGroup[] = []
+  for (const [key, transactions] of map) {
+    const [year, month] = key.split('-').map(Number)
+    const credits = transactions.filter(t => t.transaction_type === 'credit').reduce((s, t) => s + Math.abs(t.amount), 0)
+    const debits = transactions.filter(t => t.transaction_type === 'debit').reduce((s, t) => s + Math.abs(t.amount), 0)
+    groups.push({
+      key,
+      label: `${MONTH_NAMES[month]} ${year}`,
+      transactions: transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+      credits,
+      debits,
+      net: credits - debits,
+    })
+  }
+  return groups.sort((a, b) => b.key.localeCompare(a.key))
+}
+
+function MonthSection({ group, accounts }: { group: MonthGroup; accounts?: Account[] }) {
+  const [open, setOpen] = useState(false)
+  const accountMap = accounts ? Object.fromEntries(accounts.map(a => [a.id, a.name])) : null
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-gray-700/50 text-gray-500 text-xs uppercase tracking-wider">
-            <th className="text-left py-2 px-3 font-medium">Date</th>
-            <th className="text-left py-2 px-3 font-medium">Description</th>
-            {accountMap && <th className="text-left py-2 px-3 font-medium">Account</th>}
-            <th className="text-left py-2 px-3 font-medium">Category</th>
-            <th className="text-left py-2 px-3 font-medium">Type</th>
-            <th className="text-right py-2 px-3 font-medium">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {transactions.map((tx) => (
-            <tr key={tx.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
-              <td className="py-2.5 px-3 text-gray-400 whitespace-nowrap">
-                {new Date(tx.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-              </td>
-              <td className="py-2.5 px-3 text-gray-200">{tx.description || tx.merchant || '—'}</td>
-              {accountMap && <td className="py-2.5 px-3 text-gray-400">{accountMap[tx.account_id] || '—'}</td>}
-              <td className="py-2.5 px-3"><Badge color="gray">{tx.category || '—'}</Badge></td>
-              <td className="py-2.5 px-3">
-                <Badge color={tx.transaction_type === 'credit' ? 'green' : 'red'}>{tx.transaction_type}</Badge>
-              </td>
-              <td className={`py-2.5 px-3 text-right font-medium whitespace-nowrap ${
-                tx.transaction_type === 'credit' ? 'text-emerald-400' : 'text-rose-400'
-              }`}>
-                {tx.transaction_type === 'credit' ? '+' : '-'}£{fmt(Math.abs(tx.amount))}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="border border-gray-800 rounded-lg overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-gray-900 hover:bg-gray-800/70 transition-colors"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-gray-500 text-xs">{open ? '▾' : '▸'}</span>
+          <span className="text-sm font-semibold text-gray-200 truncate">{group.label}</span>
+          <span className="text-xs text-gray-500 shrink-0">{group.transactions.length} txn{group.transactions.length !== 1 ? 's' : ''}</span>
+        </div>
+        <div className="flex items-center gap-3 md:gap-5 text-xs shrink-0">
+          <span className="text-emerald-400">+£{fmt(group.credits)}</span>
+          <span className="text-rose-400">-£{fmt(group.debits)}</span>
+          <span className={`font-semibold hidden sm:inline ${group.net >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            Net: {group.net >= 0 ? '+' : ''}£{fmt(group.net)}
+          </span>
+        </div>
+      </button>
+      {open && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-t border-b border-gray-800 bg-gray-950/50 text-gray-500 text-xs uppercase tracking-wider">
+                <th className="text-left py-2 px-4 font-medium">Date</th>
+                <th className="text-left py-2 px-4 font-medium">Description</th>
+                {accountMap && <th className="text-left py-2 px-4 font-medium">Account</th>}
+                <th className="text-left py-2 px-4 font-medium">Category</th>
+                <th className="text-left py-2 px-4 font-medium">Type</th>
+                <th className="text-right py-2 px-4 font-medium">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {group.transactions.map(tx => (
+                <tr key={tx.id} className="border-b border-gray-800/40 hover:bg-gray-800/30 transition-colors">
+                  <td className="py-2.5 px-4 text-gray-400 whitespace-nowrap">
+                    {new Date(tx.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                  </td>
+                  <td className="py-2.5 px-4 text-gray-200">{tx.description || tx.merchant || '—'}</td>
+                  {accountMap && <td className="py-2.5 px-4 text-gray-400">{accountMap[tx.account_id] || '—'}</td>}
+                  <td className="py-2.5 px-4"><Badge color="gray">{tx.category || '—'}</Badge></td>
+                  <td className="py-2.5 px-4">
+                    <Badge color={tx.transaction_type === 'credit' ? 'green' : 'red'}>{tx.transaction_type}</Badge>
+                  </td>
+                  <td className={`py-2.5 px-4 text-right font-medium whitespace-nowrap ${
+                    tx.transaction_type === 'credit' ? 'text-emerald-400' : 'text-rose-400'
+                  }`}>
+                    {tx.transaction_type === 'credit' ? '+' : '-'}£{fmt(Math.abs(tx.amount))}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }
@@ -125,7 +179,7 @@ export default function Accounts({ userId }: { userId: number }) {
   const handlePurposeChange = async (accountId: number, purpose: string) => {
     try {
       await api.updateAccountPurpose(userId, accountId, purpose)
-      setAccounts(accounts.map((a) => a.id === accountId ? { ...a, purpose } : a))
+      setAccounts(accounts.map(a => a.id === accountId ? { ...a, purpose } : a))
       setEditingPurpose(null)
     } catch (e) {
       console.error(e)
@@ -144,15 +198,41 @@ export default function Accounts({ userId }: { userId: number }) {
     return acc
   }, {})
 
+  const now = new Date()
+  const thisMonthSpending = transactions
+    .filter(t => {
+      const d = new Date(t.date)
+      return t.transaction_type === 'debit' && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+    })
+    .reduce((s, t) => s + Math.abs(t.amount), 0)
+
   return (
     <div className="space-y-6">
       <Header title="Business Accounts" subtitle="Bank accounts and transaction history" />
 
+      {/* Summary Bar */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <p className="text-xs text-gray-500 uppercase tracking-wider">Total Balance</p>
+          <p className={`text-2xl font-bold mt-1 ${totalBalance < 0 ? 'text-rose-400' : 'text-white'}`}>
+            £{fmt(totalBalance)}
+          </p>
+        </div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <p className="text-xs text-gray-500 uppercase tracking-wider">Linked Accounts</p>
+          <p className="text-2xl font-bold mt-1 text-white">{accounts.length}</p>
+        </div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <p className="text-xs text-gray-500 uppercase tracking-wider">This Month's Spending</p>
+          <p className="text-2xl font-bold mt-1 text-rose-400">£{fmt(thisMonthSpending)}</p>
+        </div>
+      </div>
+
       <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit">
-        {(['all', 'aggregated'] as const).map((v) => (
+        {(['all', 'aggregated'] as const).map(v => (
           <button key={v} onClick={() => setView(v)}
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              view === v ? 'bg-indigo-600/20 text-indigo-400' : 'text-gray-400 hover:text-gray-200'
+              view === v ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-gray-200'
             }`}>
             {v === 'all' ? 'All Accounts' : 'Aggregated'}
           </button>
@@ -161,11 +241,12 @@ export default function Accounts({ userId }: { userId: number }) {
 
       {view === 'all' ? (
         <div className="space-y-3">
-          {accounts.map((account) => {
+          {accounts.map(account => {
             const borderColor = TYPE_BORDERS[account.account_type.toLowerCase()] || 'border-gray-700/50'
             const isExpanded = expandedAccount === account.id
-            const acctTxns = sortedTransactions.filter((t) => t.account_id === account.id)
+            const acctTxns = sortedTransactions.filter(t => t.account_id === account.id)
             const providerIcon = PROVIDER_LOGOS[account.provider] || '🏦'
+            const monthGroups = groupByMonth(acctTxns)
 
             return (
               <div key={account.id} className="space-y-0">
@@ -191,7 +272,7 @@ export default function Accounts({ userId }: { userId: number }) {
                           {account.purpose && (
                             <>
                               <span className="text-gray-700">·</span>
-                              <Badge color="indigo">{account.purpose.replace(/_/g, ' ')}</Badge>
+                              <Badge color="amber">{account.purpose.replace(/_/g, ' ')}</Badge>
                             </>
                           )}
                         </div>
@@ -216,26 +297,36 @@ export default function Accounts({ userId }: { userId: number }) {
                       {editingPurpose === account.id ? (
                         <select
                           value={account.purpose || ''}
-                          onChange={(e) => handlePurposeChange(account.id, e.target.value)}
+                          onChange={e => handlePurposeChange(account.id, e.target.value)}
                           onBlur={() => setEditingPurpose(null)}
                           autoFocus
-                          className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs text-gray-200 focus:outline-none focus:border-indigo-500"
+                          className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs text-gray-200 focus:outline-none focus:border-amber-500"
                         >
                           <option value="">Not set</option>
-                          {PURPOSE_OPTIONS.map((o) => (
+                          {PURPOSE_OPTIONS.map(o => (
                             <option key={o.value} value={o.value}>{o.label}</option>
                           ))}
                         </select>
                       ) : (
                         <button
-                          onClick={(e) => { e.stopPropagation(); setEditingPurpose(account.id) }}
-                          className="text-xs text-indigo-400 hover:text-indigo-300"
+                          onClick={e => { e.stopPropagation(); setEditingPurpose(account.id) }}
+                          className="text-xs text-amber-400 hover:text-amber-300"
                         >
                           {account.purpose ? account.purpose.replace(/_/g, ' ') : 'Assign purpose →'}
                         </button>
                       )}
                     </div>
-                    <TransactionTable transactions={acctTxns} />
+
+                    {/* Monthly Grouped Transactions */}
+                    {monthGroups.length === 0 ? (
+                      <p className="text-sm text-gray-500 py-4 text-center">No transactions found</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {monthGroups.map(g => (
+                          <MonthSection key={g.key} group={g} />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -244,18 +335,10 @@ export default function Accounts({ userId }: { userId: number }) {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center">
-            <p className="text-xs text-gray-500 uppercase tracking-wider">Total Balance</p>
-            <p className={`text-3xl font-bold mt-2 ${totalBalance < 0 ? 'text-rose-400' : 'text-white'}`}>
-              £{fmt(totalBalance)}
-            </p>
-            <p className="text-sm text-gray-500 mt-1">{accounts.length} linked accounts</p>
-          </div>
-
           <Section title="Breakdown by Account Type">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: 'Current Accounts', key: 'current', color: 'text-indigo-400' },
+                { label: 'Current Accounts', key: 'current', color: 'text-amber-400' },
                 { label: 'Savings', key: 'savings', color: 'text-emerald-400' },
                 { label: 'Investment', key: 'investment', color: 'text-purple-400' },
                 { label: 'Credit Cards', key: 'credit', color: 'text-rose-400' },
@@ -268,9 +351,11 @@ export default function Accounts({ userId }: { userId: number }) {
             </div>
           </Section>
 
-          <Section title="All Transactions">
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-              <TransactionTable transactions={sortedTransactions} accounts={accounts} />
+          <Section title="All Transactions by Month">
+            <div className="space-y-2">
+              {groupByMonth(sortedTransactions).map(g => (
+                <MonthSection key={g.key} group={g} accounts={accounts} />
+              ))}
             </div>
           </Section>
         </div>

@@ -45,7 +45,7 @@ export default function Chat({ userId }: { userId: number }) {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3rem)]">
+    <div className="flex flex-col h-[calc(100vh-7rem)] md:h-[calc(100vh-3rem)]">
       <Header title="Ask AI" subtitle="Ask anything about your business finances" />
 
       {messages.length === 0 && (

@@ -74,19 +74,19 @@ export default function Integrations({ userId }: { userId: number }) {
               {suppliers.map((s) => {
                 const payAccount = accounts.find((a) => a.id === s.payment_account_id)
                 return (
-                  <div key={s.id} className="flex items-center justify-between px-5 py-3">
-                    <div className="flex items-center gap-4">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-600/20 flex items-center justify-center text-indigo-400 text-xs font-bold">
+                  <div key={s.id} className="flex flex-col sm:flex-row sm:items-center justify-between px-4 md:px-5 py-3 gap-2">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-600/20 flex items-center justify-center text-indigo-400 text-xs font-bold shrink-0">
                         {s.name.charAt(0)}
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-200">{s.name}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {s.email && <span className="text-xs text-gray-500">{s.email}</span>}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-200 truncate">{s.name}</p>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          {s.email && <span className="text-xs text-gray-500 truncate">{s.email}</span>}
                           {payAccount && (
                             <>
                               <span className="text-gray-700">·</span>
-                              <span className="text-xs text-gray-500">Pays from: {payAccount.name}</span>
+                              <span className="text-xs text-gray-500 truncate">Pays from: {payAccount.name}</span>
                             </>
                           )}
                           {s.max_auto_pay && (
@@ -98,7 +98,7 @@ export default function Integrations({ userId }: { userId: number }) {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                       <Badge color="green">Approved</Badge>
                       <button onClick={() => handleDeleteSupplier(s.id)}
                         className="text-xs text-gray-500 hover:text-rose-400 transition-colors">Remove</button>
@@ -223,7 +223,7 @@ export default function Integrations({ userId }: { userId: number }) {
               <ConnectedDot />
             </div>
           )}
-          <form onSubmit={handleConnect} className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex gap-3 items-end">
+          <form onSubmit={handleConnect} className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col sm:flex-row gap-3 sm:items-end">
             <div className="flex-1">
               <label className="block text-xs text-gray-500 mb-1">Connect business email (simulated)</label>
               <input type="email" value={connectForm} onChange={(e) => setConnectForm(e.target.value)}

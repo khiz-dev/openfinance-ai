@@ -1,13 +1,16 @@
 import { useEffect, useState, useCallback } from 'react'
 import { api } from '../lib/api'
 
+let _cachedInsights: any = null
+let _insightsGenerated = false
+
 export default function Dashboard({ userId }: { userId: number }) {
   const [summary, setSummary] = useState<any>(null)
   const [transactions, setTransactions] = useState<any[]>([])
-  const [aiInsights, setAiInsights] = useState<any>(null)
+  const [aiInsights, setAiInsights] = useState<any>(_cachedInsights)
   const [loading, setLoading] = useState(true)
   const [aiLoading, setAiLoading] = useState(false)
-  const [aiLoaded, setAiLoaded] = useState(false)
+  const [aiLoaded, setAiLoaded] = useState(_insightsGenerated)
 
   useEffect(() => {
     Promise.all([api.getSummary(userId), api.getTransactions(userId)])
@@ -17,6 +20,7 @@ export default function Dashboard({ userId }: { userId: number }) {
   }, [userId])
 
   const generateInsights = useCallback(async () => {
+    if (_insightsGenerated) return
     setAiLoading(true)
     try {
       const agents = await api.getUserAgents(userId)
@@ -27,6 +31,30 @@ export default function Dashboard({ userId }: { userId: number }) {
         const result = await api.runAgent(userId, healthAgent.id)
         setAiInsights(result)
         setAiLoaded(true)
+        _cachedInsights = result
+        _insightsGenerated = true
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setAiLoading(false)
+    }
+  }, [userId])
+
+  const refreshInsights = useCallback(async () => {
+    _insightsGenerated = false
+    setAiLoading(true)
+    try {
+      const agents = await api.getUserAgents(userId)
+      const healthAgent = agents.find((a: any) =>
+        a.name === 'Financial Health Monitor' && a.is_enabled
+      )
+      if (healthAgent) {
+        const result = await api.runAgent(userId, healthAgent.id)
+        setAiInsights(result)
+        setAiLoaded(true)
+        _cachedInsights = result
+        _insightsGenerated = true
       }
     } catch (e) {
       console.error(e)
@@ -36,8 +64,8 @@ export default function Dashboard({ userId }: { userId: number }) {
   }, [userId])
 
   useEffect(() => {
-    if (!aiLoaded && !aiLoading) generateInsights()
-  }, [aiLoaded, aiLoading, generateInsights])
+    if (!_insightsGenerated && !aiLoading) generateInsights()
+  }, [aiLoading, generateInsights])
 
   if (loading) return <Loading />
   if (!summary) return <Error msg="Failed to load summary" />
@@ -82,13 +110,13 @@ export default function Dashboard({ userId }: { userId: number }) {
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-500">{aiLoaded ? 'Last generated just now' : ''}</p>
             <button
-              onClick={generateInsights}
+              onClick={refreshInsights}
               disabled={aiLoading}
               className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800 text-gray-300 disabled:text-gray-600 text-xs rounded-lg transition-colors flex items-center gap-2"
             >
               {aiLoading ? (
                 <>
-                  <span className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                  <span className="w-3 h-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
                   Generating...
                 </>
               ) : '↻ Refresh Insights'}
@@ -96,14 +124,14 @@ export default function Dashboard({ userId }: { userId: number }) {
           </div>
 
           {aiLoading && !aiInsights ? (
-            <div className="bg-gray-900 border border-indigo-500/20 rounded-xl p-6 flex items-center gap-3">
-              <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-indigo-300">Analysing your business finances...</p>
+            <div className="bg-gray-900 border border-amber-500/20 rounded-xl p-6 flex items-center gap-3">
+              <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-amber-300">Analysing your business finances...</p>
             </div>
           ) : aiInsights ? (
             <div className="space-y-3">
               {aiInsights.summary && (
-                <div className="bg-gray-900 border-l-4 border-indigo-500 rounded-r-xl p-4">
+                <div className="bg-gray-900 border-l-4 border-amber-500 rounded-r-xl p-4">
                   <p className="text-sm text-gray-200 leading-relaxed">{aiInsights.summary}</p>
                 </div>
               )}
@@ -171,7 +199,7 @@ export default function Dashboard({ userId }: { userId: number }) {
                 <span className="text-gray-100 font-medium">£{fmt(amount)}</span>
               </div>
               <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                <div className="h-full bg-indigo-500 rounded-full transition-all"
+                <div className="h-full bg-amber-500 rounded-full transition-all"
                   style={{ width: `${Math.max(2, (amount / maxSpend) * 100)}%` }} />
               </div>
             </div>
@@ -180,7 +208,7 @@ export default function Dashboard({ userId }: { userId: number }) {
       </Section>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
           <p className="text-xs text-gray-500 uppercase tracking-wider">Subscriptions</p>
           <p className="text-xl font-bold text-white mt-1">£{fmt(summary.subscription_monthly_total)}<span className="text-sm font-normal text-gray-500">/mo</span></p>
@@ -258,7 +286,7 @@ export function Badge({ children, color = 'gray' }: { children: React.ReactNode;
     green: 'bg-emerald-500/15 text-emerald-400',
     red: 'bg-rose-500/15 text-rose-400',
     amber: 'bg-amber-500/15 text-amber-400',
-    indigo: 'bg-indigo-500/15 text-indigo-400',
+    indigo: 'bg-amber-500/15 text-amber-400',
     blue: 'bg-blue-500/15 text-blue-400',
     purple: 'bg-purple-500/15 text-purple-400',
   }

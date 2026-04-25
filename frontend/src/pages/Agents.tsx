@@ -152,11 +152,11 @@ export default function Agents({ userId }: { userId: number }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <Header title="AI Agents" subtitle="Automated business finance tools" />
         {tab === 'custom' && (
           <button onClick={() => setShowCreate(!showCreate)}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors">
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors w-fit">
             + Create Agent
           </button>
         )}
@@ -171,16 +171,16 @@ export default function Agents({ userId }: { userId: number }) {
           </div>
           <div className="space-y-2">
             {autoAgents.map((agent) => (
-              <div key={agent.id} className="flex items-center justify-between bg-gray-800/50 rounded-lg px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-100">{agent.name}</p>
+              <div key={agent.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-gray-800/50 rounded-lg px-4 py-3 gap-2">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-100 truncate">{agent.name}</p>
                     <p className="text-xs text-gray-500">{TRIGGER_LABELS[agent.trigger_type] || agent.trigger_type}</p>
                   </div>
                 </div>
                 <button onClick={() => handleToggle(agent.id, true)}
-                  className="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 text-xs font-medium rounded-lg transition-colors">
+                  className="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 text-xs font-medium rounded-lg transition-colors shrink-0 w-fit">
                   Stop
                 </button>
               </div>

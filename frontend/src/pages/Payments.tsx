@@ -1,27 +1,63 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { api } from '../lib/api'
 import { Header, Section, Badge, fmt } from './Dashboard'
 
+type Recipient = {
+  name: string
+  count: number
+  total: number
+  lastDate: string
+}
+
 export default function Payments({ userId }: { userId: number }) {
   const [accounts, setAccounts] = useState<any[]>([])
-  const [tab, setTab] = useState<'payment' | 'transfer' | 'dd'>('payment')
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [tab, setTab] = useState<'payment' | 'transfer' | 'dd' | 'recipients'>('payment')
   const [result, setResult] = useState<any>(null)
 
   useEffect(() => {
-    api.getAccounts(userId).then(setAccounts)
+    Promise.all([api.getAccounts(userId), api.getTransactions(userId)])
+      .then(([a, t]) => { setAccounts(a); setTransactions(t) })
+      .catch(console.error)
   }, [userId])
+
+  const recipients = useMemo<Recipient[]>(() => {
+    const map = new Map<string, { count: number; total: number; lastDate: string }>()
+    for (const tx of transactions) {
+      if (tx.transaction_type !== 'debit') continue
+      const name = (tx.merchant || tx.description || '').trim()
+      if (!name) continue
+      const existing = map.get(name)
+      if (existing) {
+        existing.count++
+        existing.total += Math.abs(tx.amount)
+        if (tx.date > existing.lastDate) existing.lastDate = tx.date
+      } else {
+        map.set(name, { count: 1, total: Math.abs(tx.amount), lastDate: tx.date })
+      }
+    }
+    return Array.from(map.entries())
+      .map(([name, data]) => ({ name, ...data }))
+      .sort((a, b) => b.total - a.total)
+  }, [transactions])
+
+  const TABS = [
+    ['payment', 'Payment'],
+    ['transfer', 'Transfer'],
+    ['dd', 'Direct Debit'],
+    ['recipients', 'Recipients'],
+  ] as const
 
   return (
     <div className="space-y-6">
       <Header title="Payments & Transfers" subtitle="Simulated financial actions" />
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit">
-        {([['payment', 'Payment'], ['transfer', 'Transfer'], ['dd', 'Direct Debit']] as const).map(([id, label]) => (
+      <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit overflow-x-auto max-w-full">
+        {TABS.map(([id, label]) => (
           <button
             key={id}
             onClick={() => { setTab(id); setResult(null) }}
-            className={`px-4 py-1.5 rounded text-sm transition-colors ${tab === id ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}
+            className={`px-4 py-1.5 rounded text-sm transition-colors ${tab === id ? 'bg-amber-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}
           >
             {label}
           </button>
@@ -31,6 +67,7 @@ export default function Payments({ userId }: { userId: number }) {
       {tab === 'payment' && <PaymentForm userId={userId} accounts={accounts} onResult={setResult} />}
       {tab === 'transfer' && <TransferForm userId={userId} accounts={accounts} onResult={setResult} />}
       {tab === 'dd' && <DirectDebitForm userId={userId} accounts={accounts} onResult={setResult} />}
+      {tab === 'recipients' && <RecipientsTable recipients={recipients} />}
 
       {result && (
         <div className={`bg-gray-900 border rounded-xl p-4 ${result.error ? 'border-rose-500/30' : 'border-emerald-500/30'}`}>
@@ -45,9 +82,8 @@ export default function Payments({ userId }: { userId: number }) {
         </div>
       )}
 
-      {/* Current Balances */}
       <Section title="Account Balances">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {accounts.map((a) => (
             <div key={a.id} className="bg-gray-900 border border-gray-800 rounded-lg p-3">
               <p className="text-xs text-gray-500">{a.account_type}</p>
@@ -57,6 +93,51 @@ export default function Payments({ userId }: { userId: number }) {
           ))}
         </div>
       </Section>
+    </div>
+  )
+}
+
+function RecipientsTable({ recipients }: { recipients: Recipient[] }) {
+  if (recipients.length === 0) {
+    return (
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
+        <p className="text-sm text-gray-500">No payment recipients found</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-gray-700/50 text-gray-500 text-xs uppercase tracking-wider">
+              <th className="text-left py-3 px-4 font-medium">Recipient</th>
+              <th className="text-center py-3 px-4 font-medium">Payments</th>
+              <th className="text-right py-3 px-4 font-medium">Total Sent</th>
+              <th className="text-right py-3 px-4 font-medium">Last Payment</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recipients.map((r) => (
+              <tr key={r.name} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
+                <td className="py-3 px-4 text-gray-200 font-medium">{r.name}</td>
+                <td className="py-3 px-4 text-center">
+                  <Badge color="amber">{r.count}</Badge>
+                </td>
+                <td className="py-3 px-4 text-right font-medium text-rose-400">£{fmt(r.total)}</td>
+                <td className="py-3 px-4 text-right text-gray-400 whitespace-nowrap">
+                  {new Date(r.lastDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="px-4 py-3 border-t border-gray-800 flex justify-between text-xs text-gray-500">
+        <span>{recipients.length} unique recipient{recipients.length !== 1 ? 's' : ''}</span>
+        <span>Total: £{fmt(recipients.reduce((s, r) => s + r.total, 0))}</span>
+      </div>
     </div>
   )
 }
@@ -145,7 +226,7 @@ function Input({ label, value, onChange, required }: { label: string; value: str
   return (
     <div>
       <label className="block text-xs text-gray-500 mb-1">{label}</label>
-      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} required={required} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500" />
+      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} required={required} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-amber-500" />
     </div>
   )
 }
@@ -154,7 +235,7 @@ function NumInput({ label, value, onChange }: { label: string; value: number; on
   return (
     <div>
       <label className="block text-xs text-gray-500 mb-1">{label}</label>
-      <input type="number" step="0.01" value={value || ''} onChange={(e) => onChange(parseFloat(e.target.value) || 0)} required className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500" />
+      <input type="number" step="0.01" value={value || ''} onChange={(e) => onChange(parseFloat(e.target.value) || 0)} required className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-amber-500" />
     </div>
   )
 }
@@ -163,7 +244,7 @@ function Select({ label, value, options, onChange }: { label: string; value: num
   return (
     <div>
       <label className="block text-xs text-gray-500 mb-1">{label}</label>
-      <select value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+      <select value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-amber-500">
         {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </div>
@@ -172,7 +253,7 @@ function Select({ label, value, options, onChange }: { label: string; value: num
 
 function Btn({ submitting, label }: { submitting: boolean; label: string }) {
   return (
-    <button type="submit" disabled={submitting} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors">
+    <button type="submit" disabled={submitting} className="px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors">
       {submitting ? 'Processing...' : label}
     </button>
   )

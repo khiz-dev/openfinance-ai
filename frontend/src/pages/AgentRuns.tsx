@@ -30,21 +30,21 @@ export default function AgentRuns({ userId }: { userId: number }) {
             <div key={run.id} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
               <button
                 onClick={() => setExpanded(expanded === run.id ? null : run.id)}
-                className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-800/30 transition-colors text-left"
+                className="w-full flex flex-col sm:flex-row sm:items-center justify-between px-4 md:px-5 py-4 hover:bg-gray-800/30 transition-colors text-left gap-2"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <Badge color={statusColor(run.status)}>{run.status}</Badge>
-                  <span className="text-sm font-medium text-gray-200">
+                  <span className="text-sm font-medium text-gray-200 truncate">
                     {run.agent_name || `Agent #${run.agent_definition_id}`}
                   </span>
-                  <span className="text-xs text-gray-500">Run #{run.id}</span>
+                  <span className="text-xs text-gray-500 shrink-0">Run #{run.id}</span>
                 </div>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-500 shrink-0 sm:text-right">
                   {new Date(run.started_at).toLocaleString('en-GB')}
                 </span>
               </button>
               {expanded === run.id && (
-                <div className="border-t border-gray-800 px-5 py-4 space-y-3 text-sm">
+                <div className="border-t border-gray-800 px-4 md:px-5 py-4 space-y-3 text-sm overflow-x-auto">
                   {run.reasoning_summary && (
                     <Field label="Reasoning">
                       <pre className="text-xs text-gray-400 whitespace-pre-wrap">{run.reasoning_summary}</pre>
