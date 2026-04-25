@@ -24,10 +24,25 @@ class BuiltinAgentSpec:
 
 BUILTIN_AGENTS: list[BuiltinAgentSpec] = [
     BuiltinAgentSpec(
-        name="Invoice Tracker",
-        description="Scans emails for invoices, matches against approved suppliers, and tracks payment status.",
-        goal="Scan connected email messages for business invoices. Match each invoice against the approved supplier list. For approved suppliers, extract payee, amount, due date and create payment instructions from the configured payment account. Flag invoices from unknown suppliers for review. Track which invoices are paid, pending, or overdue.",
-        system_prompt="You are a B2B invoice processing specialist. Extract invoice details from emails, verify against approved supplier list, and create payment instructions. Always flag invoices from non-approved suppliers. Be concise — use bullet points, not paragraphs. Keep the summary under 3 sentences.",
+        name="Invoice Manager",
+        description="Finds invoices from emails, shows previews with payment details, and initiates payments from configured accounts.",
+        goal=(
+            "Scan connected email messages for business invoices. For each invoice found:\n"
+            "1. Extract: supplier name, invoice number, amount, due date, payment details (sort code, account number or reference)\n"
+            "2. Show a brief preview of each invoice with key details\n"
+            "3. Match against the approved supplier list\n"
+            "4. For approved suppliers: create a payment instruction from their configured payment account\n"
+            "5. For unknown suppliers: flag for manual review\n"
+            "6. Summarise: total invoices found, total amount due, how many auto-paid vs pending approval\n"
+            "Note: Payments are currently simulated. In the future, Open Banking payment initiation will be integrated."
+        ),
+        system_prompt=(
+            "You are a B2B invoice management specialist. Your job is to find invoices, "
+            "present clear previews with payment details, and initiate payments. "
+            "For each invoice, show: supplier, invoice #, amount, due date, and status. "
+            "Format invoice previews as a structured list. "
+            "Be concise — use bullet points. Keep the summary under 3 sentences."
+        ),
         allowed_actions=["scan_emails", "detect_invoices", "create_payment_instruction", "generate_alert", "request_user_approval"],
         trigger_type="on_invoice_detected",
         execution_mode="auto_execute",

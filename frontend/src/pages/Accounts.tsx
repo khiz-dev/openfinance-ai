@@ -35,16 +35,16 @@ type MonthGroup = {
 }
 
 const TYPE_BORDERS: Record<string, string> = {
-  current: 'border-amber-500/60',
-  savings: 'border-emerald-500/60',
-  investment: 'border-purple-500/60',
-  credit: 'border-rose-500/60',
+  current: 'border-blue-300',
+  savings: 'border-emerald-300',
+  investment: 'border-purple-300',
+  credit: 'border-rose-300',
 }
 
 const TYPE_BADGE_COLORS: Record<string, string> = {
-  current: 'amber',
+  current: 'blue',
   savings: 'green',
-  investment: 'blue',
+  investment: 'purple',
   credit: 'red',
 }
 
@@ -101,20 +101,20 @@ function MonthSection({ group, accounts }: { group: MonthGroup; accounts?: Accou
   const accountMap = accounts ? Object.fromEntries(accounts.map(a => [a.id, a.name])) : null
 
   return (
-    <div className="border border-gray-800 rounded-lg overflow-hidden">
+    <div className="border border-gray-200 rounded-xl overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-gray-900 hover:bg-gray-800/70 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors"
       >
         <div className="flex items-center gap-3 min-w-0">
-          <span className="text-gray-500 text-xs">{open ? '▾' : '▸'}</span>
-          <span className="text-sm font-semibold text-gray-200 truncate">{group.label}</span>
-          <span className="text-xs text-gray-500 shrink-0">{group.transactions.length} txn{group.transactions.length !== 1 ? 's' : ''}</span>
+          <span className="text-gray-400 text-xs">{open ? '▾' : '▸'}</span>
+          <span className="text-sm font-semibold text-gray-800 truncate">{group.label}</span>
+          <span className="text-xs text-gray-400 shrink-0">{group.transactions.length} txn{group.transactions.length !== 1 ? 's' : ''}</span>
         </div>
         <div className="flex items-center gap-3 md:gap-5 text-xs shrink-0">
-          <span className="text-emerald-400">+£{fmt(group.credits)}</span>
-          <span className="text-rose-400">-£{fmt(group.debits)}</span>
-          <span className={`font-semibold hidden sm:inline ${group.net >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+          <span className="text-emerald-600">+£{fmt(group.credits)}</span>
+          <span className="text-rose-600">-£{fmt(group.debits)}</span>
+          <span className={`font-semibold hidden sm:inline ${group.net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
             Net: {group.net >= 0 ? '+' : ''}£{fmt(group.net)}
           </span>
         </div>
@@ -123,7 +123,7 @@ function MonthSection({ group, accounts }: { group: MonthGroup; accounts?: Accou
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-t border-b border-gray-800 bg-gray-950/50 text-gray-500 text-xs uppercase tracking-wider">
+              <tr className="border-t border-b border-gray-200 bg-gray-50 text-gray-400 text-xs uppercase tracking-wider">
                 <th className="text-left py-2 px-4 font-medium">Date</th>
                 <th className="text-left py-2 px-4 font-medium">Description</th>
                 {accountMap && <th className="text-left py-2 px-4 font-medium">Account</th>}
@@ -134,18 +134,18 @@ function MonthSection({ group, accounts }: { group: MonthGroup; accounts?: Accou
             </thead>
             <tbody>
               {group.transactions.map(tx => (
-                <tr key={tx.id} className="border-b border-gray-800/40 hover:bg-gray-800/30 transition-colors">
+                <tr key={tx.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                   <td className="py-2.5 px-4 text-gray-400 whitespace-nowrap">
                     {new Date(tx.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
                   </td>
-                  <td className="py-2.5 px-4 text-gray-200">{tx.description || tx.merchant || '—'}</td>
-                  {accountMap && <td className="py-2.5 px-4 text-gray-400">{accountMap[tx.account_id] || '—'}</td>}
+                  <td className="py-2.5 px-4 text-gray-700">{tx.description || tx.merchant || '—'}</td>
+                  {accountMap && <td className="py-2.5 px-4 text-gray-500">{accountMap[tx.account_id] || '—'}</td>}
                   <td className="py-2.5 px-4"><Badge color="gray">{tx.category || '—'}</Badge></td>
                   <td className="py-2.5 px-4">
                     <Badge color={tx.transaction_type === 'credit' ? 'green' : 'red'}>{tx.transaction_type}</Badge>
                   </td>
                   <td className={`py-2.5 px-4 text-right font-medium whitespace-nowrap ${
-                    tx.transaction_type === 'credit' ? 'text-emerald-400' : 'text-rose-400'
+                    tx.transaction_type === 'credit' ? 'text-emerald-600' : 'text-rose-600'
                   }`}>
                     {tx.transaction_type === 'credit' ? '+' : '-'}£{fmt(Math.abs(tx.amount))}
                   </td>
@@ -212,27 +212,27 @@ export default function Accounts({ userId }: { userId: number }) {
 
       {/* Summary Bar */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wider">Total Balance</p>
-          <p className={`text-2xl font-bold mt-1 ${totalBalance < 0 ? 'text-rose-400' : 'text-white'}`}>
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
+          <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Total Balance</p>
+          <p className={`text-2xl font-bold mt-1 ${totalBalance < 0 ? 'text-rose-600' : 'text-gray-900'}`}>
             £{fmt(totalBalance)}
           </p>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wider">Linked Accounts</p>
-          <p className="text-2xl font-bold mt-1 text-white">{accounts.length}</p>
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
+          <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Linked Accounts</p>
+          <p className="text-2xl font-bold mt-1 text-gray-900">{accounts.length}</p>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wider">This Month's Spending</p>
-          <p className="text-2xl font-bold mt-1 text-rose-400">£{fmt(thisMonthSpending)}</p>
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
+          <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">This Month's Spending</p>
+          <p className="text-2xl font-bold mt-1 text-rose-600">£{fmt(thisMonthSpending)}</p>
         </div>
       </div>
 
-      <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 bg-white border border-gray-200 rounded-lg p-1 w-fit shadow-sm">
         {(['all', 'aggregated'] as const).map(v => (
           <button key={v} onClick={() => setView(v)}
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              view === v ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400 hover:text-gray-200'
+              view === v ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-800'
             }`}>
             {v === 'all' ? 'All Accounts' : 'Aggregated'}
           </button>
@@ -242,7 +242,7 @@ export default function Accounts({ userId }: { userId: number }) {
       {view === 'all' ? (
         <div className="space-y-3">
           {accounts.map(account => {
-            const borderColor = TYPE_BORDERS[account.account_type.toLowerCase()] || 'border-gray-700/50'
+            const borderColor = TYPE_BORDERS[account.account_type.toLowerCase()] || 'border-gray-200'
             const isExpanded = expandedAccount === account.id
             const acctTxns = sortedTransactions.filter(t => t.account_id === account.id)
             const providerIcon = PROVIDER_LOGOS[account.provider] || '🏦'
@@ -252,26 +252,26 @@ export default function Accounts({ userId }: { userId: number }) {
               <div key={account.id} className="space-y-0">
                 <button
                   onClick={() => setExpandedAccount(isExpanded ? null : account.id)}
-                  className={`w-full text-left bg-gray-900 border-2 ${borderColor} rounded-xl p-5 hover:bg-gray-800/50 transition-colors ${
+                  className={`w-full text-left bg-white border-2 ${borderColor} rounded-2xl p-5 hover:shadow-md transition-all shadow-sm ${
                     isExpanded ? 'rounded-b-none' : ''
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center text-lg shrink-0">
+                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-lg shrink-0">
                         {providerIcon}
                       </div>
                       <div>
-                        <p className="text-base font-medium text-gray-100">{account.name}</p>
+                        <p className="text-base font-medium text-gray-900">{account.name}</p>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <span className="text-xs font-medium text-gray-400">{account.provider}</span>
-                          <span className="text-gray-700">·</span>
+                          <span className="text-gray-300">·</span>
                           <Badge color={TYPE_BADGE_COLORS[account.account_type.toLowerCase()] || 'gray'}>
                             {account.account_type}
                           </Badge>
                           {account.purpose && (
                             <>
-                              <span className="text-gray-700">·</span>
+                              <span className="text-gray-300">·</span>
                               <Badge color="amber">{account.purpose.replace(/_/g, ' ')}</Badge>
                             </>
                           )}
@@ -279,10 +279,10 @@ export default function Accounts({ userId }: { userId: number }) {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`text-xl font-semibold ${account.balance < 0 ? 'text-rose-400' : 'text-white'}`}>
+                      <p className={`text-xl font-semibold ${account.balance < 0 ? 'text-rose-600' : 'text-gray-900'}`}>
                         £{fmt(account.balance)}
                       </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="text-xs text-gray-400 mt-0.5">
                         {acctTxns.length} transaction{acctTxns.length !== 1 ? 's' : ''}
                       </p>
                     </div>
@@ -290,17 +290,16 @@ export default function Accounts({ userId }: { userId: number }) {
                 </button>
 
                 {isExpanded && (
-                  <div className={`bg-gray-900 border-2 border-t-0 ${borderColor} rounded-b-xl p-4 space-y-4`}>
-                    {/* Purpose Editor */}
-                    <div className="flex items-center gap-3 pb-3 border-b border-gray-800">
-                      <span className="text-xs text-gray-500 uppercase tracking-wider">Purpose:</span>
+                  <div className={`bg-white border-2 border-t-0 ${borderColor} rounded-b-2xl p-4 space-y-4`}>
+                    <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
+                      <span className="text-xs text-gray-400 uppercase tracking-wider">Purpose:</span>
                       {editingPurpose === account.id ? (
                         <select
                           value={account.purpose || ''}
                           onChange={e => handlePurposeChange(account.id, e.target.value)}
                           onBlur={() => setEditingPurpose(null)}
                           autoFocus
-                          className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs text-gray-200 focus:outline-none focus:border-amber-500"
+                          className="bg-white border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                         >
                           <option value="">Not set</option>
                           {PURPOSE_OPTIONS.map(o => (
@@ -310,16 +309,15 @@ export default function Accounts({ userId }: { userId: number }) {
                       ) : (
                         <button
                           onClick={e => { e.stopPropagation(); setEditingPurpose(account.id) }}
-                          className="text-xs text-amber-400 hover:text-amber-300"
+                          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
                         >
                           {account.purpose ? account.purpose.replace(/_/g, ' ') : 'Assign purpose →'}
                         </button>
                       )}
                     </div>
 
-                    {/* Monthly Grouped Transactions */}
                     {monthGroups.length === 0 ? (
-                      <p className="text-sm text-gray-500 py-4 text-center">No transactions found</p>
+                      <p className="text-sm text-gray-400 py-4 text-center">No transactions found</p>
                     ) : (
                       <div className="space-y-2">
                         {monthGroups.map(g => (
@@ -338,13 +336,13 @@ export default function Accounts({ userId }: { userId: number }) {
           <Section title="Breakdown by Account Type">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: 'Current Accounts', key: 'current', color: 'text-amber-400' },
-                { label: 'Savings', key: 'savings', color: 'text-emerald-400' },
-                { label: 'Investment', key: 'investment', color: 'text-purple-400' },
-                { label: 'Credit Cards', key: 'credit', color: 'text-rose-400' },
+                { label: 'Current Accounts', key: 'current', color: 'text-blue-600' },
+                { label: 'Savings', key: 'savings', color: 'text-emerald-600' },
+                { label: 'Investment', key: 'investment', color: 'text-purple-600' },
+                { label: 'Credit Cards', key: 'credit', color: 'text-rose-600' },
               ].map(({ label, key, color }) => (
-                <div key={key} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">{label}</p>
+                <div key={key} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
+                  <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">{label}</p>
                   <p className={`text-2xl font-bold mt-1 ${color}`}>£{fmt(balanceByType[key] || 0)}</p>
                 </div>
               ))}

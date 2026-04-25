@@ -58,7 +58,7 @@ export const api = {
 
   // Chat
   chat: (userId: number, message: string, history: { role: string; content: string }[] = []) =>
-    request<{ reply: string; data_referenced: string[] }>(`/users/${userId}/chat`, {
+    request<{ reply: string; data_referenced: string[]; suggested_agent?: { id: number; name: string; description: string } | null }>(`/users/${userId}/chat`, {
       method: 'POST',
       body: JSON.stringify({ message, conversation_history: history }),
     }),

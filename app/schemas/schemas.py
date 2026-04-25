@@ -255,6 +255,13 @@ class ChatRequest(BaseModel):
     conversation_history: list[dict[str, str]] = []
 
 
+class SuggestedAgent(BaseModel):
+    id: int
+    name: str
+    description: str | None = None
+
+
 class ChatResponse(BaseModel):
     reply: str
     data_referenced: list[str] = []
+    suggested_agent: SuggestedAgent | dict[str, Any] | None = None

@@ -59,10 +59,10 @@ export function SimulatorWidget({ userId }: { userId: number }) {
 
   if (!open) {
     return (
-      <div className="fixed bottom-5 left-5 z-50">
+      <div className="fixed bottom-5 right-5 z-50">
         <button
           onClick={() => setOpen(true)}
-          className="px-4 py-2.5 bg-gray-900 hover:bg-gray-800 border border-gray-700 text-gray-200 text-sm font-medium rounded-xl shadow-xl transition-all hover:scale-105 flex items-center gap-2"
+          className="px-4 py-2.5 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl shadow-lg transition-all hover:shadow-xl hover:scale-105 flex items-center gap-2"
         >
           <span>⚡</span> Simulator
         </button>
@@ -71,16 +71,16 @@ export function SimulatorWidget({ userId }: { userId: number }) {
   }
 
   return (
-    <div className="fixed bottom-5 left-5 z-50 w-96 max-h-[80vh] overflow-y-auto bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl">
+    <div className="fixed bottom-5 right-5 z-50 w-96 max-h-[80vh] overflow-y-auto bg-white border border-gray-200 rounded-2xl shadow-2xl">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <span>⚡</span>
-          <span className="text-sm font-semibold text-gray-200">Transaction Simulator</span>
+          <span className="text-sm font-semibold text-gray-800">Transaction Simulator</span>
         </div>
         <button
           onClick={() => setOpen(false)}
-          className="w-6 h-6 flex items-center justify-center rounded-md text-gray-500 hover:text-gray-200 hover:bg-gray-800 transition-colors text-xs"
+          className="w-6 h-6 flex items-center justify-center rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors text-xs"
         >
           ✕
         </button>
@@ -93,7 +93,7 @@ export function SimulatorWidget({ userId }: { userId: number }) {
             <button
               key={p.label}
               onClick={() => applyPreset(p)}
-              className="px-2 py-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-400 text-xs rounded-md transition-colors"
+              className="px-2 py-1 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 text-xs rounded-md transition-colors"
             >
               {p.label}
             </button>
@@ -107,7 +107,7 @@ export function SimulatorWidget({ userId }: { userId: number }) {
             <select
               value={form.account_id}
               onChange={e => setForm({ ...form, account_id: Number(e.target.value) })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-amber-500"
+              className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
             >
               {accounts.map(a => (
                 <option key={a.id} value={a.id}>{a.name}</option>
@@ -123,7 +123,7 @@ export function SimulatorWidget({ userId }: { userId: number }) {
                 step="0.01"
                 value={form.amount || ''}
                 onChange={e => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-amber-500"
+                className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                 required
               />
             </div>
@@ -132,7 +132,7 @@ export function SimulatorWidget({ userId }: { userId: number }) {
               <select
                 value={form.transaction_type}
                 onChange={e => setForm({ ...form, transaction_type: e.target.value })}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-amber-500"
+                className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               >
                 <option value="debit">Debit</option>
                 <option value="credit">Credit</option>
@@ -146,7 +146,7 @@ export function SimulatorWidget({ userId }: { userId: number }) {
               type="text"
               value={form.description}
               onChange={e => setForm({ ...form, description: e.target.value })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-amber-500"
+              className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               required
             />
           </div>
@@ -154,7 +154,7 @@ export function SimulatorWidget({ userId }: { userId: number }) {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full px-3 py-2 bg-amber-600 hover:bg-amber-500 disabled:bg-gray-700 text-white text-xs font-medium rounded-lg transition-colors"
+            className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-xs font-medium rounded-lg transition-colors"
           >
             {submitting ? 'Simulating...' : 'Simulate Transaction'}
           </button>
@@ -162,19 +162,19 @@ export function SimulatorWidget({ userId }: { userId: number }) {
 
         {/* Result */}
         {result && (
-          <div className={`border rounded-lg p-3 space-y-1.5 ${result.error ? 'border-rose-500/30 bg-rose-500/5' : 'border-emerald-500/30 bg-emerald-500/5'}`}>
+          <div className={`border rounded-lg p-3 space-y-1.5 ${result.error ? 'border-rose-200 bg-rose-50' : 'border-emerald-200 bg-emerald-50'}`}>
             {result.error ? (
-              <p className="text-rose-400 text-xs">{result.error}</p>
+              <p className="text-rose-600 text-xs">{result.error}</p>
             ) : (
               <>
                 <div className="flex items-center gap-2">
                   <Badge color="green">#{result.transaction_id}</Badge>
-                  <span className="text-xs text-gray-300">Balance: £{result.new_balance?.toFixed(2)}</span>
+                  <span className="text-xs text-gray-600">Balance: £{result.new_balance?.toFixed(2)}</span>
                 </div>
                 {result.triggered_agents?.length > 0 && (
                   <div className="space-y-1 pt-1">
                     {result.triggered_agents.map((a: any, i: number) => (
-                      <div key={i} className="text-xs text-amber-300 bg-amber-500/10 rounded px-2 py-1">
+                      <div key={i} className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
                         {a.agent_name}: {a.status || 'error'}
                       </div>
                     ))}

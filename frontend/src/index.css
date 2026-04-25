@@ -1,7 +1,7 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
 
 body {
-  @apply bg-[#0a1628] text-gray-100 antialiased;
+  @apply bg-[#f7f8fa] text-gray-900 antialiased;
   font-family: 'Inter', system-ui, sans-serif;
 }

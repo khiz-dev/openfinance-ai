@@ -156,31 +156,30 @@ export default function Agents({ userId }: { userId: number }) {
         <Header title="AI Agents" subtitle="Automated business finance tools" />
         {tab === 'custom' && (
           <button onClick={() => setShowCreate(!showCreate)}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors w-fit">
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm w-fit">
             + Create Agent
           </button>
         )}
       </div>
 
-      {/* Active Automations */}
       {autoAgents.length > 0 && (
-        <div className="bg-gray-900 border border-emerald-500/20 rounded-xl p-4 space-y-3">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-wider">Active Automations</h3>
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <h3 className="text-sm font-semibold text-emerald-700 uppercase tracking-wider">Active Automations</h3>
           </div>
           <div className="space-y-2">
             {autoAgents.map((agent) => (
-              <div key={agent.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-gray-800/50 rounded-lg px-4 py-3 gap-2">
+              <div key={agent.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white rounded-lg px-4 py-3 gap-2 border border-emerald-100 shadow-sm">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-100 truncate">{agent.name}</p>
-                    <p className="text-xs text-gray-500">{TRIGGER_LABELS[agent.trigger_type] || agent.trigger_type}</p>
+                    <p className="text-sm font-medium text-gray-800 truncate">{agent.name}</p>
+                    <p className="text-xs text-gray-400">{TRIGGER_LABELS[agent.trigger_type] || agent.trigger_type}</p>
                   </div>
                 </div>
                 <button onClick={() => handleToggle(agent.id, true)}
-                  className="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 text-xs font-medium rounded-lg transition-colors shrink-0 w-fit">
+                  className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-medium rounded-lg transition-colors shrink-0 w-fit border border-rose-200">
                   Stop
                 </button>
               </div>
@@ -189,30 +188,28 @@ export default function Agents({ userId }: { userId: number }) {
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 bg-white border border-gray-200 rounded-lg p-1 w-fit shadow-sm">
         {[
           { id: 'builtin' as const, label: `Built-in (${builtin.length})` },
           { id: 'custom' as const, label: `My Agents (${custom.length})` },
         ].map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              tab === t.id ? 'bg-indigo-600/20 text-indigo-400' : 'text-gray-400 hover:text-gray-200'
+              tab === t.id ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-800'
             }`}>
             {t.label}
           </button>
         ))}
       </div>
 
-      {/* Pre-run Prompt */}
       {promptAgent && !runningId && !runResult && (
-        <div className="bg-gray-900 border border-indigo-500/30 rounded-xl p-5 space-y-4">
+        <div className="bg-white border border-blue-200 rounded-2xl shadow-sm p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-semibold text-indigo-400 uppercase tracking-wider">Run {promptAgent.name}</h3>
-              <p className="text-xs text-gray-500 mt-1">Provide additional context or instructions (optional)</p>
+              <h3 className="text-sm font-semibold text-blue-700 uppercase tracking-wider">Run {promptAgent.name}</h3>
+              <p className="text-xs text-gray-400 mt-1">Provide additional context or instructions (optional)</p>
             </div>
-            <button onClick={() => setPromptAgent(null)} className="text-gray-500 hover:text-gray-300 text-xs">Cancel</button>
+            <button onClick={() => setPromptAgent(null)} className="text-gray-400 hover:text-gray-600 text-xs">Cancel</button>
           </div>
           <textarea
             value={promptText}
@@ -220,16 +217,16 @@ export default function Agents({ userId }: { userId: number }) {
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handlePromptSubmit() } }}
             placeholder={`e.g. "Focus on invoices from last week" or "Check payments to AWS and Slack only"...`}
             rows={3}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-indigo-500 resize-none"
+            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
           />
           <div className="flex gap-2">
             <button onClick={handlePromptSubmit}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors">
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
               {promptText.trim() ? 'Run with Context' : 'Run Agent'}
             </button>
             {!promptText.trim() && (
               <button onClick={handleSkipPrompt}
-                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm rounded-lg transition-colors">
+                className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 text-sm rounded-lg transition-colors border border-gray-200">
                 Run without prompt
               </button>
             )}
@@ -237,38 +234,35 @@ export default function Agents({ userId }: { userId: number }) {
         </div>
       )}
 
-      {/* Thinking Animation */}
       {runningId && thinkingSteps.length > 0 && (
-        <div className="bg-gray-900 border border-indigo-500/30 rounded-xl p-5 space-y-3">
+        <div className="bg-white border border-blue-200 rounded-2xl shadow-sm p-5 space-y-3">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
-            <h3 className="text-sm font-semibold text-indigo-400">Agent is thinking...</h3>
+            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <h3 className="text-sm font-semibold text-blue-700">Agent is thinking...</h3>
           </div>
           <div className="space-y-2 pl-1">
             {thinkingSteps.map((step, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
                 {step.done ? (
-                  <span className="text-emerald-400 text-xs">✓</span>
+                  <span className="text-emerald-600 text-xs">✓</span>
                 ) : (
-                  <span className="text-gray-600 text-xs">○</span>
+                  <span className="text-gray-300 text-xs">○</span>
                 )}
-                <span className={step.done ? 'text-gray-300' : 'text-gray-600'}>{step.text}</span>
+                <span className={step.done ? 'text-gray-600' : 'text-gray-300'}>{step.text}</span>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Run Result */}
       {runResult && <AgentResultUI result={runResult} onDismiss={() => { setRunResult(null); setChatAgent(null); setChatMessages([]) }} />}
 
-      {/* Follow-up Chat for results */}
       {runResult && !runResult.error && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 space-y-3">
-          <p className="text-xs text-gray-500 uppercase tracking-wider">Ask follow-up questions</p>
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 space-y-3">
+          <p className="text-xs text-gray-400 uppercase tracking-wider">Ask follow-up questions</p>
           {chatMessages.filter((m) => m.role !== 'system').map((msg, i) => (
             <div key={i} className={`text-sm rounded-lg px-3 py-2 ${
-              msg.role === 'user' ? 'bg-indigo-600/20 text-indigo-200 ml-8' : 'bg-gray-800 text-gray-300 mr-8'
+              msg.role === 'user' ? 'bg-blue-50 text-blue-800 ml-8' : 'bg-gray-50 text-gray-600 mr-8'
             }`}>
               {msg.content}
             </div>
@@ -279,17 +273,16 @@ export default function Agents({ userId }: { userId: number }) {
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleChatSend()}
               placeholder="Ask a follow-up question..."
-              className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500"
+              className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
             />
             <button onClick={handleChatSend} disabled={!chatInput.trim()}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 text-white text-sm rounded-lg transition-colors">
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 text-white text-sm rounded-lg transition-colors shadow-sm">
               Send
             </button>
           </div>
         </div>
       )}
 
-      {/* Agent Lists */}
       {tab === 'builtin' ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {builtin.map((agent) => (
@@ -300,8 +293,8 @@ export default function Agents({ userId }: { userId: number }) {
         <div className="space-y-4">
           {showCreate && <CreateAgentForm userId={userId} onCreated={() => { setShowCreate(false); load() }} />}
           {custom.length === 0 && !showCreate ? (
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
-              <p className="text-gray-500 text-sm">No custom agents yet. Create one to get started.</p>
+            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8 text-center">
+              <p className="text-gray-400 text-sm">No custom agents yet. Create one to get started.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -316,17 +309,15 @@ export default function Agents({ userId }: { userId: number }) {
   )
 }
 
-// ── Result UIs ───────────────────────────────────────────────────────
-
 function AgentResultUI({ result, onDismiss }: { result: any; onDismiss: () => void }) {
   if (result.error && !result.summary) {
     return (
-      <div className="bg-gray-900 border border-rose-500/30 rounded-xl p-5 space-y-3">
+      <div className="bg-white border border-rose-200 rounded-2xl shadow-sm p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-rose-400 uppercase tracking-wider">Error</h3>
-          <button onClick={onDismiss} className="text-gray-500 hover:text-gray-300 text-xs">Dismiss</button>
+          <h3 className="text-sm font-semibold text-rose-600 uppercase tracking-wider">Error</h3>
+          <button onClick={onDismiss} className="text-gray-400 hover:text-gray-600 text-xs">Dismiss</button>
         </div>
-        <p className="text-rose-400 text-sm">{result.error}</p>
+        <p className="text-rose-600 text-sm">{result.error}</p>
       </div>
     )
   }
@@ -334,15 +325,15 @@ function AgentResultUI({ result, onDismiss }: { result: any; onDismiss: () => vo
   const name = result._agentName || result.agent_name || ''
 
   return (
-    <div className="bg-gray-900 border border-indigo-500/30 rounded-xl p-5 space-y-4">
+    <div className="bg-white border border-blue-200 rounded-2xl shadow-sm p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-indigo-400 uppercase tracking-wider">{name || 'Agent Result'}</h3>
-        <button onClick={onDismiss} className="text-gray-500 hover:text-gray-300 text-xs">Dismiss</button>
+        <h3 className="text-sm font-semibold text-blue-700 uppercase tracking-wider">{name || 'Agent Result'}</h3>
+        <button onClick={onDismiss} className="text-gray-400 hover:text-gray-600 text-xs">Dismiss</button>
       </div>
 
       {result.summary && (
-        <div className="bg-gray-800/50 border-l-4 border-indigo-500 rounded-r-lg p-4">
-          <p className="text-sm text-gray-200 leading-relaxed">{result.summary}</p>
+        <div className="bg-blue-50 border-l-4 border-blue-500 rounded-r-lg p-4">
+          <p className="text-sm text-gray-700 leading-relaxed">{result.summary}</p>
         </div>
       )}
 
@@ -355,12 +346,13 @@ function AgentResultUI({ result, onDismiss }: { result: any; onDismiss: () => vo
           {result.insights.map((ins: string, i: number) => {
             const isWarn = /risk|over|high|exceed|concern|flag|overdue|decline/i.test(ins)
             const isGood = /good|healthy|strong|positive|under|saved|on track/i.test(ins)
-            const borderColor = isWarn ? 'border-rose-500' : isGood ? 'border-emerald-500' : 'border-amber-500'
+            const borderColor = isWarn ? 'border-rose-300' : isGood ? 'border-emerald-300' : 'border-amber-300'
+            const bgColor = isWarn ? 'bg-rose-50' : isGood ? 'bg-emerald-50' : 'bg-amber-50'
             const icon = isWarn ? '🔴' : isGood ? '🟢' : '🟡'
             return (
-              <div key={i} className={`bg-gray-800/50 rounded-lg p-3 border-l-4 ${borderColor} flex gap-2 items-start`}>
+              <div key={i} className={`${bgColor} rounded-lg p-3 border-l-4 ${borderColor} flex gap-2 items-start`}>
                 <span className="text-xs mt-0.5">{icon}</span>
-                <p className="text-sm text-gray-300">{ins}</p>
+                <p className="text-sm text-gray-700">{ins}</p>
               </div>
             )
           })}
@@ -369,9 +361,9 @@ function AgentResultUI({ result, onDismiss }: { result: any; onDismiss: () => vo
 
       {result.executed_actions?.length > 0 && (
         <div className="space-y-1">
-          <p className="text-xs text-gray-500 uppercase">Actions Taken</p>
+          <p className="text-xs text-gray-400 uppercase">Actions Taken</p>
           {result.executed_actions.map((a: any, i: number) => (
-            <div key={i} className="text-xs bg-emerald-500/10 text-emerald-300 px-3 py-2 rounded-lg">
+            <div key={i} className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-2 rounded-lg">
               {a.description || `${a.tool}: ${JSON.stringify(a.params)}`}
             </div>
           ))}
@@ -380,9 +372,9 @@ function AgentResultUI({ result, onDismiss }: { result: any; onDismiss: () => vo
 
       {result.approval_required_actions?.length > 0 && (
         <div className="space-y-1">
-          <p className="text-xs text-gray-500 uppercase">Awaiting Approval</p>
+          <p className="text-xs text-gray-400 uppercase">Awaiting Approval</p>
           {result.approval_required_actions.map((a: any, i: number) => (
-            <div key={i} className="text-xs bg-amber-500/10 text-amber-300 px-3 py-2 rounded-lg">
+            <div key={i} className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-3 py-2 rounded-lg">
               {a.description || `${a.tool}: ${JSON.stringify(a.params)}`}
             </div>
           ))}
@@ -391,9 +383,9 @@ function AgentResultUI({ result, onDismiss }: { result: any; onDismiss: () => vo
 
       {result.risk_flags?.length > 0 && (
         <div className="space-y-1">
-          <p className="text-xs text-gray-500 uppercase">Risk Flags</p>
+          <p className="text-xs text-gray-400 uppercase">Risk Flags</p>
           {result.risk_flags.map((f: string, i: number) => (
-            <div key={i} className="text-xs bg-rose-500/10 text-rose-300 px-3 py-2 rounded-lg flex items-center gap-2">
+            <div key={i} className="text-xs bg-rose-50 text-rose-700 border border-rose-200 px-3 py-2 rounded-lg flex items-center gap-2">
               <span>🔴</span> {f}
             </div>
           ))}
@@ -402,15 +394,13 @@ function AgentResultUI({ result, onDismiss }: { result: any; onDismiss: () => vo
 
       {result.reasoning && (
         <details>
-          <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-400">View AI reasoning</summary>
-          <pre className="mt-2 text-xs text-gray-400 bg-gray-800/50 rounded p-3 overflow-x-auto whitespace-pre-wrap">{result.reasoning}</pre>
+          <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600">View AI reasoning</summary>
+          <pre className="mt-2 text-xs text-gray-500 bg-gray-50 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">{result.reasoning}</pre>
         </details>
       )}
     </div>
   )
 }
-
-// ── Agent Card ───────────────────────────────────────────────────────
 
 function AgentCard({ agent, running, onRun, onToggle }: {
   agent: any; running: boolean; onRun: (agent: any) => void; onToggle: (id: number, enabled: boolean) => void
@@ -419,22 +409,22 @@ function AgentCard({ agent, running, onRun, onToggle }: {
   const trigger = TRIGGER_LABELS[agent.trigger_type] || agent.trigger_type
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 space-y-3">
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 space-y-3 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         <div>
-          <h4 className="text-sm font-semibold text-white">{agent.name}</h4>
-          <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{agent.description}</p>
+          <h4 className="text-sm font-semibold text-gray-900">{agent.name}</h4>
+          <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{agent.description}</p>
         </div>
         <Badge color={agent.is_enabled ? 'green' : 'gray'}>{agent.is_enabled ? 'Active' : 'Inactive'}</Badge>
       </div>
       <div className="flex items-center gap-2 flex-wrap text-xs">
-        <span className="text-gray-500">{trigger}</span>
-        <span className="text-gray-700">·</span>
+        <span className="text-gray-400">{trigger}</span>
+        <span className="text-gray-300">·</span>
         <Badge color={mode.color}>{mode.label}</Badge>
       </div>
       <div className="flex gap-2">
         <button onClick={() => onRun(agent)} disabled={running || !agent.is_enabled}
-          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-500 text-white text-xs font-medium rounded-lg transition-colors">
+          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 text-white text-xs font-medium rounded-lg transition-colors shadow-sm">
           {running ? (
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -443,15 +433,13 @@ function AgentCard({ agent, running, onRun, onToggle }: {
           ) : 'Run Agent'}
         </button>
         <button onClick={() => onToggle(agent.id, agent.is_enabled)}
-          className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition-colors">
+          className="px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-600 text-xs rounded-lg transition-colors border border-gray-200">
           {agent.is_enabled ? 'Disable' : 'Enable'}
         </button>
       </div>
     </div>
   )
 }
-
-// ── Create Agent Form ────────────────────────────────────────────────
 
 function CreateAgentForm({ userId, onCreated }: { userId: number; onCreated: () => void }) {
   const [form, setForm] = useState({
@@ -470,8 +458,8 @@ function CreateAgentForm({ userId, onCreated }: { userId: number; onCreated: () 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
-      <h3 className="text-sm font-semibold text-indigo-400 uppercase tracking-wider">Create Custom Agent</h3>
+    <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 space-y-4">
+      <h3 className="text-sm font-semibold text-blue-700 uppercase tracking-wider">Create Custom Agent</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input label="Name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="Invoice Auditor" required />
         <Input label="Description" value={form.description} onChange={(v) => setForm({ ...form, description: v })} placeholder="Audits invoices for compliance" />
@@ -479,14 +467,14 @@ function CreateAgentForm({ userId, onCreated }: { userId: number; onCreated: () 
       <div>
         <label className="block text-xs text-gray-500 mb-1">Goal / Instruction</label>
         <textarea value={form.goal} onChange={(e) => setForm({ ...form, goal: e.target.value })}
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-indigo-500 min-h-[80px]"
+          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 min-h-[80px]"
           placeholder="Analyse invoices and flag any that exceed typical amounts..." required />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs text-gray-500 mb-1">When should it run?</label>
           <select value={form.trigger_type} onChange={(e) => setForm({ ...form, trigger_type: e.target.value })}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
             {Object.entries(TRIGGER_LABELS).map(([val, label]) => (
               <option key={val} value={val}>{label}</option>
             ))}
@@ -495,7 +483,7 @@ function CreateAgentForm({ userId, onCreated }: { userId: number; onCreated: () 
         <div>
           <label className="block text-xs text-gray-500 mb-1">What should it do?</label>
           <select value={form.execution_mode} onChange={(e) => setForm({ ...form, execution_mode: e.target.value })}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
             <option value="suggest_only">Recommend actions only</option>
             <option value="auto_execute">Execute automatically</option>
           </select>
@@ -505,18 +493,18 @@ function CreateAgentForm({ userId, onCreated }: { userId: number; onCreated: () 
         <label className="block text-xs text-gray-500 mb-1">Allowed Actions</label>
         <div className="flex flex-wrap gap-2">
           {Object.entries(ACTION_LABELS).map(([action, label]) => (
-            <label key={action} className="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer">
+            <label key={action} className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer">
               <input type="checkbox" checked={form.allowed_actions.includes(action)}
                 onChange={(e) => setForm({ ...form, allowed_actions: e.target.checked
                   ? [...form.allowed_actions, action] : form.allowed_actions.filter((a) => a !== action) })}
-                className="rounded bg-gray-700 border-gray-600" />
+                className="rounded bg-gray-50 border-gray-300 text-blue-600 focus:ring-blue-500" />
               {label}
             </label>
           ))}
         </div>
       </div>
       <button type="submit" disabled={submitting || !form.name || !form.goal}
-        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors">
+        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
         {submitting ? 'Creating...' : 'Create Agent'}
       </button>
     </form>
@@ -530,7 +518,7 @@ function Input({ label, value, onChange, placeholder, required }: {
     <div>
       <label className="block text-xs text-gray-500 mb-1">{label}</label>
       <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} required={required}
-        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-indigo-500" />
+        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
     </div>
   )
 }

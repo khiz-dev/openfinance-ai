@@ -52,12 +52,12 @@ export default function Payments({ userId }: { userId: number }) {
     <div className="space-y-6">
       <Header title="Payments & Transfers" subtitle="Simulated financial actions" />
 
-      <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1 w-fit overflow-x-auto max-w-full">
+      <div className="flex gap-1 bg-white border border-gray-200 rounded-lg p-1 w-fit overflow-x-auto max-w-full shadow-sm">
         {TABS.map(([id, label]) => (
           <button
             key={id}
             onClick={() => { setTab(id); setResult(null) }}
-            className={`px-4 py-1.5 rounded text-sm transition-colors ${tab === id ? 'bg-amber-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}
+            className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${tab === id ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
           >
             {label}
           </button>
@@ -70,13 +70,13 @@ export default function Payments({ userId }: { userId: number }) {
       {tab === 'recipients' && <RecipientsTable recipients={recipients} />}
 
       {result && (
-        <div className={`bg-gray-900 border rounded-xl p-4 ${result.error ? 'border-rose-500/30' : 'border-emerald-500/30'}`}>
+        <div className={`bg-white border rounded-2xl shadow-sm p-4 ${result.error ? 'border-rose-200' : 'border-emerald-200'}`}>
           {result.error ? (
-            <p className="text-rose-400 text-sm">{result.error}</p>
+            <p className="text-rose-600 text-sm">{result.error}</p>
           ) : (
             <div className="flex items-center gap-3">
               <Badge color="green">{result.status}</Badge>
-              <span className="text-sm text-gray-300">Instruction #{result.id} — £{fmt(result.amount)}</span>
+              <span className="text-sm text-gray-600">Instruction #{result.id} — £{fmt(result.amount)}</span>
             </div>
           )}
         </div>
@@ -85,10 +85,10 @@ export default function Payments({ userId }: { userId: number }) {
       <Section title="Account Balances">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {accounts.map((a) => (
-            <div key={a.id} className="bg-gray-900 border border-gray-800 rounded-lg p-3">
-              <p className="text-xs text-gray-500">{a.account_type}</p>
-              <p className="text-sm text-gray-300">{a.name}</p>
-              <p className={`text-lg font-semibold mt-1 ${a.balance < 0 ? 'text-rose-400' : 'text-white'}`}>£{fmt(a.balance)}</p>
+            <div key={a.id} className="bg-white border border-gray-200 rounded-xl shadow-sm p-3">
+              <p className="text-xs text-gray-400">{a.account_type}</p>
+              <p className="text-sm text-gray-700">{a.name}</p>
+              <p className={`text-lg font-semibold mt-1 ${a.balance < 0 ? 'text-rose-600' : 'text-gray-900'}`}>£{fmt(a.balance)}</p>
             </div>
           ))}
         </div>
@@ -100,18 +100,18 @@ export default function Payments({ userId }: { userId: number }) {
 function RecipientsTable({ recipients }: { recipients: Recipient[] }) {
   if (recipients.length === 0) {
     return (
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
-        <p className="text-sm text-gray-500">No payment recipients found</p>
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8 text-center">
+        <p className="text-sm text-gray-400">No payment recipients found</p>
       </div>
     )
   }
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-700/50 text-gray-500 text-xs uppercase tracking-wider">
+            <tr className="border-b border-gray-100 text-gray-400 text-xs uppercase tracking-wider">
               <th className="text-left py-3 px-4 font-medium">Recipient</th>
               <th className="text-center py-3 px-4 font-medium">Payments</th>
               <th className="text-right py-3 px-4 font-medium">Total Sent</th>
@@ -120,12 +120,12 @@ function RecipientsTable({ recipients }: { recipients: Recipient[] }) {
           </thead>
           <tbody>
             {recipients.map((r) => (
-              <tr key={r.name} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
-                <td className="py-3 px-4 text-gray-200 font-medium">{r.name}</td>
+              <tr key={r.name} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                <td className="py-3 px-4 text-gray-800 font-medium">{r.name}</td>
                 <td className="py-3 px-4 text-center">
-                  <Badge color="amber">{r.count}</Badge>
+                  <Badge color="blue">{r.count}</Badge>
                 </td>
-                <td className="py-3 px-4 text-right font-medium text-rose-400">£{fmt(r.total)}</td>
+                <td className="py-3 px-4 text-right font-medium text-rose-600">£{fmt(r.total)}</td>
                 <td className="py-3 px-4 text-right text-gray-400 whitespace-nowrap">
                   {new Date(r.lastDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </td>
@@ -134,9 +134,9 @@ function RecipientsTable({ recipients }: { recipients: Recipient[] }) {
           </tbody>
         </table>
       </div>
-      <div className="px-4 py-3 border-t border-gray-800 flex justify-between text-xs text-gray-500">
+      <div className="px-4 py-3 border-t border-gray-100 flex justify-between text-xs text-gray-400">
         <span>{recipients.length} unique recipient{recipients.length !== 1 ? 's' : ''}</span>
-        <span>Total: £{fmt(recipients.reduce((s, r) => s + r.total, 0))}</span>
+        <span className="font-semibold text-gray-600">Total: £{fmt(recipients.reduce((s, r) => s + r.total, 0))}</span>
       </div>
     </div>
   )
@@ -156,7 +156,7 @@ function PaymentForm({ userId, accounts, onResult }: { userId: number; accounts:
   }
 
   return (
-    <form onSubmit={submit} className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+    <form onSubmit={submit} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Select label="From Account" value={form.from_account_id} options={accounts.map((a) => ({ value: a.id, label: `${a.name} (£${a.balance.toFixed(2)})` }))} onChange={(v) => setForm({ ...form, from_account_id: v })} />
         <Input label="Payee Name" value={form.payee_name} onChange={(v) => setForm({ ...form, payee_name: v })} required />
@@ -184,7 +184,7 @@ function TransferForm({ userId, accounts, onResult }: { userId: number; accounts
   }
 
   return (
-    <form onSubmit={submit} className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+    <form onSubmit={submit} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Select label="From Account" value={form.from_account_id} options={accounts.map((a) => ({ value: a.id, label: `${a.name} (£${a.balance.toFixed(2)})` }))} onChange={(v) => setForm({ ...form, from_account_id: v })} />
         <Select label="To Account" value={form.to_account_id} options={accounts.map((a) => ({ value: a.id, label: `${a.name} (£${a.balance.toFixed(2)})` }))} onChange={(v) => setForm({ ...form, to_account_id: v })} />
@@ -210,7 +210,7 @@ function DirectDebitForm({ userId, accounts, onResult }: { userId: number; accou
   }
 
   return (
-    <form onSubmit={submit} className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+    <form onSubmit={submit} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Select label="Account" value={form.account_id} options={accounts.map((a) => ({ value: a.id, label: `${a.name} (£${a.balance.toFixed(2)})` }))} onChange={(v) => setForm({ ...form, account_id: v })} />
         <Input label="Payee Name" value={form.payee_name} onChange={(v) => setForm({ ...form, payee_name: v })} required />
@@ -226,7 +226,7 @@ function Input({ label, value, onChange, required }: { label: string; value: str
   return (
     <div>
       <label className="block text-xs text-gray-500 mb-1">{label}</label>
-      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} required={required} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-amber-500" />
+      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} required={required} className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
     </div>
   )
 }
@@ -235,7 +235,7 @@ function NumInput({ label, value, onChange }: { label: string; value: number; on
   return (
     <div>
       <label className="block text-xs text-gray-500 mb-1">{label}</label>
-      <input type="number" step="0.01" value={value || ''} onChange={(e) => onChange(parseFloat(e.target.value) || 0)} required className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-amber-500" />
+      <input type="number" step="0.01" value={value || ''} onChange={(e) => onChange(parseFloat(e.target.value) || 0)} required className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
     </div>
   )
 }
@@ -244,7 +244,7 @@ function Select({ label, value, options, onChange }: { label: string; value: num
   return (
     <div>
       <label className="block text-xs text-gray-500 mb-1">{label}</label>
-      <select value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-amber-500">
+      <select value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
         {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </div>
@@ -253,7 +253,7 @@ function Select({ label, value, options, onChange }: { label: string; value: num
 
 function Btn({ submitting, label }: { submitting: boolean; label: string }) {
   return (
-    <button type="submit" disabled={submitting} className="px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors">
+    <button type="submit" disabled={submitting} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
       {submitting ? 'Processing...' : label}
     </button>
   )

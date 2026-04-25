@@ -1,0 +1,46 @@
+---
+description: Core platform requirements and architecture for OpenFinance AI
+alwaysApply: true
+---
+
+# OpenFinance AI — Platform Requirements
+
+## Vision
+AI-powered personal finance automation platform: "Zapier + AI + Banking Automation"
+Users link bank accounts (simulated), aggregate financial data, run AI agents, automate decisions.
+
+## Tech Stack
+- Backend: Python FastAPI, SQLite (SQLAlchemy), pytest
+- AI: Real LLM agents (OpenAI default, Anthropic, Bedrock future-ready)
+- Config: LLM_PROVIDER, OPENAI_API_KEY, LLM_MODEL env vars
+
+## Architecture Invariants
+- LLM produces structured JSON; never mutates DB directly
+- LLM can only call approved platform tools (no arbitrary code)
+- All agent runs logged with: prompt, reasoning, data used, actions, errors
+- Payment actions require approval unless explicitly allowed
+- All actions stored as audit logs
+
+## Core Models
+User, BankAccount, Transaction, EmailConnection, EmailMessage,
+AgentDefinition, AgentRun, PaymentInstruction, AccountTransferInstruction,
+DirectDebitInstruction, Subscription, AuditLog
+
+## Agent Flow
+1. Build financial context → 2. LLM prompt → 3. Structured plan (JSON)
+→ 4. Policy validation → 5. Tool execution → 6. Store AgentRun
+
+## Built-in Agents (LLM-powered)
+Affordability AI, Spending Behavior AI, Subscription Tracker AI,
+Payday Monitor, Manage Finance Agent, Invoice Executor
+
+## Custom Agents
+Users define: name, goal, trigger, data sources, actions, execution mode,
+spending limits. LLM interprets intent → safe structured plan → approved tools only.
+
+## Key APIs
+- User insights: summary, transactions, insights, subscriptions
+- Agent management: list, enable, disable, run, view runs
+- Payments: payments, transfers, direct-debits (simulated)
+- Simulator: POST /simulator/transactions
+- Email: connect, list emails
