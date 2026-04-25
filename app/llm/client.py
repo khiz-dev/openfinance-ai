@@ -46,6 +46,10 @@ class LLMClient:
 
     # ── OpenAI ────────────────────────────────────────────────────────
 
+    @property
+    def _is_reasoning_model(self) -> bool:
+        return self.model.startswith(("o1", "o3", "o4"))
+
     def _generate_openai(
         self, system_prompt: str, user_prompt: str, temperature: float, max_tokens: int,
         *, json_mode: bool = True,
@@ -60,15 +64,22 @@ class LLMClient:
         from openai import OpenAI
 
         client = OpenAI(api_key=api_key)
+
+        role = "developer" if self._is_reasoning_model else "system"
         kwargs: dict[str, Any] = dict(
             model=self.model,
             messages=[
-                {"role": "system", "content": system_prompt},
+                {"role": role, "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            temperature=temperature,
-            max_tokens=max_tokens,
         )
+
+        if self._is_reasoning_model:
+            kwargs["max_completion_tokens"] = max_tokens
+        else:
+            kwargs["temperature"] = temperature
+            kwargs["max_tokens"] = max_tokens
+
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
 

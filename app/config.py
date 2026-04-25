@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     LLM_PROVIDER: str = "openai"
     OPENAI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
-    LLM_MODEL: str = "gpt-4.1"
+    LLM_MODEL: str = "o4-mini"
 
     SECRET_KEY: str = "dev-secret-key-change-in-production"
     DEBUG: bool = True

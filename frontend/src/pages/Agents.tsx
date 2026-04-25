@@ -37,8 +37,20 @@ function isAutoAgent(agent: any): boolean {
   return agent.is_enabled && agent.trigger_type !== 'manual'
 }
 
+function getTimeSince(date: Date): string {
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000)
+  if (seconds < 60) return 'just now'
+  const mins = Math.floor(seconds / 60)
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
+}
+
 export default function Agents({ userId }: { userId: number }) {
   const [agents, setAgents] = useState<any[]>([])
+  const [agentRuns, setAgentRuns] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [runResult, setRunResult] = useState<any>(null)
   const [runningId, setRunningId] = useState<number | null>(null)
@@ -52,7 +64,10 @@ export default function Agents({ userId }: { userId: number }) {
   const [promptText, setPromptText] = useState('')
 
   const load = () => {
-    api.getUserAgents(userId).then(setAgents).catch(console.error).finally(() => setLoading(false))
+    Promise.all([api.getUserAgents(userId), api.getAgentRuns(userId)])
+      .then(([a, r]) => { setAgents(a); setAgentRuns(r) })
+      .catch(console.error)
+      .finally(() => setLoading(false))
   }
   useEffect(load, [userId])
 
@@ -163,27 +178,50 @@ export default function Agents({ userId }: { userId: number }) {
       </div>
 
       {autoAgents.length > 0 && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 space-y-3">
-          <div className="flex items-center gap-2">
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <h3 className="text-sm font-semibold text-emerald-700 uppercase tracking-wider">Active Automations</h3>
+            <h3 className="text-sm font-semibold text-gray-800">Active Automations</h3>
+            <span className="text-xs text-gray-400 ml-auto">{autoAgents.length} running</span>
           </div>
-          <div className="space-y-2">
-            {autoAgents.map((agent) => (
-              <div key={agent.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white rounded-lg px-4 py-3 gap-2 border border-emerald-100 shadow-sm">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate">{agent.name}</p>
-                    <p className="text-xs text-gray-400">{TRIGGER_LABELS[agent.trigger_type] || agent.trigger_type}</p>
+          <div className="divide-y divide-gray-100">
+            {autoAgents.map((agent) => {
+              const lastRun = agentRuns.find((r: any) => r.agent_definition_id === agent.id)
+              const lastRunTime = lastRun?.started_at ? new Date(lastRun.started_at) : null
+              const timeSince = lastRunTime ? getTimeSince(lastRunTime) : null
+              return (
+                <div key={agent.id} className="px-5 py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-800">{agent.name}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{agent.description}</p>
+                        <div className="flex items-center gap-3 mt-2 flex-wrap">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                            ⚡ {TRIGGER_LABELS[agent.trigger_type] || agent.trigger_type}
+                          </span>
+                          {lastRun && (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-gray-400">
+                              Last ran {timeSince} · <Badge color={lastRun.status === 'completed' ? 'green' : lastRun.status === 'failed' ? 'red' : 'amber'}>{lastRun.status}</Badge>
+                            </span>
+                          )}
+                          {!lastRun && (
+                            <span className="text-[10px] text-gray-400">Waiting for trigger — hasn't run yet</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <button onClick={() => handleToggle(agent.id, true)}
+                      className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-medium rounded-lg transition-colors shrink-0 border border-rose-200 mt-1">
+                      Stop
+                    </button>
                   </div>
                 </div>
-                <button onClick={() => handleToggle(agent.id, true)}
-                  className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-medium rounded-lg transition-colors shrink-0 w-fit border border-rose-200">
-                  Stop
-                </button>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
@@ -285,22 +323,35 @@ export default function Agents({ userId }: { userId: number }) {
 
       {tab === 'builtin' ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {builtin.map((agent) => (
-            <AgentCard key={agent.id} agent={agent} running={runningId === agent.id} onRun={handleRunClick} onToggle={handleToggle} />
-          ))}
+          {builtin.map((agent) => {
+            const lastRun = agentRuns.find((r: any) => r.agent_definition_id === agent.id)
+            return (
+              <AgentCard key={agent.id} agent={agent} running={runningId === agent.id} onRun={handleRunClick} onToggle={handleToggle} lastRun={lastRun} />
+            )
+          })}
         </div>
       ) : (
         <div className="space-y-4">
           {showCreate && <CreateAgentForm userId={userId} onCreated={() => { setShowCreate(false); load() }} />}
           {custom.length === 0 && !showCreate ? (
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8 text-center">
-              <p className="text-gray-400 text-sm">No custom agents yet. Create one to get started.</p>
+            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8 text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto">
+                <span className="text-xl">🤖</span>
+              </div>
+              <p className="text-gray-500 text-sm font-medium">No custom agents yet</p>
+              <p className="text-gray-400 text-xs max-w-xs mx-auto">Create your first agent from a template or build one from scratch to automate your workflows.</p>
+              <button onClick={() => setShowCreate(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+                Create Your First Agent
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {custom.map((agent) => (
-                <AgentCard key={agent.id} agent={agent} running={runningId === agent.id} onRun={handleRunClick} onToggle={handleToggle} />
-              ))}
+              {custom.map((agent) => {
+                const lastRun = agentRuns.find((r: any) => r.agent_definition_id === agent.id)
+                return (
+                  <AgentCard key={agent.id} agent={agent} running={runningId === agent.id} onRun={handleRunClick} onToggle={handleToggle} lastRun={lastRun} />
+                )
+              })}
             </div>
           )}
         </div>
@@ -474,12 +525,14 @@ function AgentResultUI({ result, onDismiss }: { result: any; onDismiss: () => vo
   )
 }
 
-function AgentCard({ agent, running, onRun, onToggle }: {
-  agent: any; running: boolean; onRun: (agent: any) => void; onToggle: (id: number, enabled: boolean) => void
+function AgentCard({ agent, running, onRun, onToggle, lastRun }: {
+  agent: any; running: boolean; onRun: (agent: any) => void; onToggle: (id: number, enabled: boolean) => void; lastRun?: any
 }) {
   const [autoMode, setAutoMode] = useState(agent.requires_approval === false)
   const mode = MODE_LABELS[agent.execution_mode] || { label: agent.execution_mode, color: 'gray' }
   const trigger = TRIGGER_LABELS[agent.trigger_type] || agent.trigger_type
+  const lastRunTime = lastRun?.started_at ? new Date(lastRun.started_at) : null
+  const timeSince = lastRunTime ? getTimeSince(lastRunTime) : null
 
   const handleAutoToggle = async () => {
     const newValue = !autoMode
@@ -504,17 +557,34 @@ function AgentCard({ agent, running, onRun, onToggle }: {
         </div>
         <Badge color={agent.is_enabled ? 'green' : 'gray'}>{agent.is_enabled ? 'Active' : 'Inactive'}</Badge>
       </div>
+
       <div className="flex items-center gap-2 flex-wrap text-xs">
-        <span className="text-gray-400">{trigger}</span>
-        <span className="text-gray-300">·</span>
+        <span className="inline-flex items-center gap-1 text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">⚡ {trigger}</span>
         <Badge color={mode.color}>{mode.label}</Badge>
       </div>
 
-      {/* Auto-execute toggle */}
+      {lastRun && (
+        <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+          <div className={`w-2 h-2 rounded-full shrink-0 ${lastRun.status === 'completed' ? 'bg-emerald-500' : lastRun.status === 'failed' ? 'bg-rose-500' : 'bg-amber-500'}`} />
+          <p className="text-xs text-gray-500 flex-1">
+            Last ran <span className="font-medium text-gray-700">{timeSince}</span>
+            {lastRun.status === 'completed' && ' — completed successfully'}
+            {lastRun.status === 'failed' && ' — failed'}
+            {lastRun.status === 'running' && ' — still running'}
+          </p>
+        </div>
+      )}
+      {!lastRun && (
+        <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+          <div className="w-2 h-2 rounded-full bg-gray-300 shrink-0" />
+          <p className="text-xs text-gray-400">Never run — click "Run Agent" to start</p>
+        </div>
+      )}
+
       <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
         <div>
           <p className="text-xs font-medium text-gray-700">Full AI Control</p>
-          <p className="text-[10px] text-gray-400">Execute actions without asking for approval</p>
+          <p className="text-[10px] text-gray-400">Execute actions without approval</p>
         </div>
         <button
           onClick={handleAutoToggle}
@@ -543,13 +613,71 @@ function AgentCard({ agent, running, onRun, onToggle }: {
   )
 }
 
+const AGENT_TEMPLATES = [
+  {
+    icon: '📋', label: 'Invoice Auditor',
+    description: 'Audits invoices for compliance and flags unusual amounts',
+    name: 'Invoice Auditor', goal: 'Review all invoices and flag any that exceed typical amounts, have missing details, or come from unfamiliar suppliers.',
+    trigger_type: 'on_invoice_detected', execution_mode: 'suggest_only',
+    allowed_actions: ['scan_emails', 'detect_invoices', 'generate_alert'],
+  },
+  {
+    icon: '💸', label: 'Expense Watchdog',
+    description: 'Monitors spending and alerts when budgets are exceeded',
+    name: 'Expense Watchdog', goal: 'Monitor all business expenses in real-time. Alert when spending in any category exceeds normal levels or when unusual transactions are detected.',
+    trigger_type: 'on_transaction', execution_mode: 'suggest_only',
+    allowed_actions: ['analyse_transactions', 'generate_alert'],
+  },
+  {
+    icon: '🔄', label: 'Payment Scheduler',
+    description: 'Automatically schedules recurring payments on time',
+    name: 'Payment Scheduler', goal: 'Track recurring payment obligations and ensure they are scheduled on time. Flag any missed or upcoming payments.',
+    trigger_type: 'scheduled_weekly', execution_mode: 'auto_execute',
+    allowed_actions: ['create_payment_instruction', 'generate_alert', 'request_user_approval'],
+  },
+  {
+    icon: '📊', label: 'Weekly Report',
+    description: 'Generates a weekly financial summary every Monday',
+    name: 'Weekly Financial Report', goal: 'Every week, generate a concise financial summary including income vs expenses, cash position, notable transactions, and any risks.',
+    trigger_type: 'scheduled_weekly', execution_mode: 'suggest_only',
+    allowed_actions: ['analyse_transactions', 'generate_alert'],
+  },
+  {
+    icon: '⚠', label: 'Low Balance Alert',
+    description: 'Warns when any account balance drops below a threshold',
+    name: 'Low Balance Monitor', goal: 'Monitor all bank accounts continuously. Generate an immediate alert if any account balance drops below a safe threshold. Suggest transfers from surplus accounts.',
+    trigger_type: 'on_low_balance', execution_mode: 'suggest_only',
+    allowed_actions: ['analyse_transactions', 'transfer_between_accounts', 'generate_alert'],
+  },
+  {
+    icon: '✏', label: 'Custom from scratch',
+    description: 'Build your own agent with full control',
+    name: '', goal: '', trigger_type: 'manual', execution_mode: 'suggest_only',
+    allowed_actions: ['analyse_transactions', 'generate_alert'],
+  },
+]
+
 function CreateAgentForm({ userId, onCreated }: { userId: number; onCreated: () => void }) {
+  const [step, setStep] = useState<'pick' | 'configure'>('pick')
   const [form, setForm] = useState({
     name: '', goal: '', description: '', trigger_type: 'manual', execution_mode: 'suggest_only',
     allowed_data_sources: ['transactions', 'balances', 'subscriptions', 'emails'],
     allowed_actions: ['analyse_transactions', 'generate_alert'],
   })
   const [submitting, setSubmitting] = useState(false)
+
+  const applyTemplate = (t: typeof AGENT_TEMPLATES[number]) => {
+    setForm({
+      ...form,
+      name: t.name,
+      description: t.description,
+      goal: t.goal,
+      trigger_type: t.trigger_type,
+      execution_mode: t.execution_mode,
+      allowed_actions: t.allowed_actions,
+    })
+    setStep('configure')
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -559,19 +687,57 @@ function CreateAgentForm({ userId, onCreated }: { userId: number; onCreated: () 
     finally { setSubmitting(false) }
   }
 
+  if (step === 'pick') {
+    return (
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-800">Create a Custom Agent</h3>
+          <p className="text-xs text-gray-400 mt-0.5">Start from a template or build from scratch</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {AGENT_TEMPLATES.map((t) => (
+            <button
+              key={t.label}
+              onClick={() => applyTemplate(t)}
+              className="text-left bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-xl p-4 transition-all group"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">{t.icon}</span>
+                <span className="text-sm font-semibold text-gray-800 group-hover:text-blue-700">{t.label}</span>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">{t.description}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 space-y-4">
-      <h3 className="text-sm font-semibold text-blue-700 uppercase tracking-wider">Create Custom Agent</h3>
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-800">Configure Your Agent</h3>
+          <p className="text-xs text-gray-400 mt-0.5">Customise the details or use as-is</p>
+        </div>
+        <button type="button" onClick={() => setStep('pick')} className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+          ← Back to templates
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input label="Name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="Invoice Auditor" required />
-        <Input label="Description" value={form.description} onChange={(v) => setForm({ ...form, description: v })} placeholder="Audits invoices for compliance" />
+        <Input label="Agent Name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="e.g. Invoice Auditor" required />
+        <Input label="Short Description" value={form.description} onChange={(v) => setForm({ ...form, description: v })} placeholder="What does this agent do?" />
       </div>
+
       <div>
-        <label className="block text-xs text-gray-500 mb-1">Goal / Instruction</label>
+        <label className="block text-xs text-gray-500 mb-1">What should the agent do? <span className="text-gray-300">(be specific)</span></label>
         <textarea value={form.goal} onChange={(e) => setForm({ ...form, goal: e.target.value })}
-          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 min-h-[80px]"
-          placeholder="Analyse invoices and flag any that exceed typical amounts..." required />
+          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
+          rows={3}
+          placeholder="e.g. Review all invoices from the last 7 days. Flag any over £5,000 or from new suppliers..." required />
       </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs text-gray-500 mb-1">When should it run?</label>
@@ -583,19 +749,22 @@ function CreateAgentForm({ userId, onCreated }: { userId: number; onCreated: () 
           </select>
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-1">What should it do?</label>
+          <label className="block text-xs text-gray-500 mb-1">How should it act?</label>
           <select value={form.execution_mode} onChange={(e) => setForm({ ...form, execution_mode: e.target.value })}
             className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-            <option value="suggest_only">Recommend actions only</option>
-            <option value="auto_execute">Execute automatically</option>
+            <option value="suggest_only">Recommend actions (you approve)</option>
+            <option value="auto_execute">Execute automatically (full AI control)</option>
           </select>
         </div>
       </div>
-      <div>
-        <label className="block text-xs text-gray-500 mb-1">Allowed Actions</label>
-        <div className="flex flex-wrap gap-2">
+
+      <details className="group">
+        <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600 select-none">
+          Advanced: Allowed actions
+        </summary>
+        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
           {Object.entries(ACTION_LABELS).map(([action, label]) => (
-            <label key={action} className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer">
+            <label key={action} className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-100 hover:border-blue-200 transition-colors">
               <input type="checkbox" checked={form.allowed_actions.includes(action)}
                 onChange={(e) => setForm({ ...form, allowed_actions: e.target.checked
                   ? [...form.allowed_actions, action] : form.allowed_actions.filter((a) => a !== action) })}
@@ -604,11 +773,18 @@ function CreateAgentForm({ userId, onCreated }: { userId: number; onCreated: () 
             </label>
           ))}
         </div>
+      </details>
+
+      <div className="flex gap-2 pt-1">
+        <button type="submit" disabled={submitting || !form.name || !form.goal}
+          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+          {submitting ? 'Creating...' : 'Create Agent'}
+        </button>
+        <button type="button" onClick={() => setStep('pick')}
+          className="px-4 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-600 text-sm rounded-lg transition-colors border border-gray-200">
+          Cancel
+        </button>
       </div>
-      <button type="submit" disabled={submitting || !form.name || !form.goal}
-        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
-        {submitting ? 'Creating...' : 'Create Agent'}
-      </button>
     </form>
   )
 }

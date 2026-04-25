@@ -41,7 +41,7 @@ fi
 run_ssh "cat > openfinance-ai/.env << EOF
 LLM_PROVIDER=openai
 OPENAI_API_KEY=${OPENAI_API_KEY}
-LLM_MODEL=gpt-4.1
+LLM_MODEL=o4-mini
 DATABASE_URL=sqlite:///./data/openfinance.db
 SECRET_KEY=production-secret-openfinance-2026
 ALLOWED_ORIGINS=http://13.40.137.17,https://financeminion-f5b68.web.app,https://financeminion-f5b68.firebaseapp.com
