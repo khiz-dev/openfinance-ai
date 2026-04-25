@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { api } from './lib/api'
 import Dashboard from './pages/Dashboard'
 import Accounts from './pages/Accounts'
 import Agents from './pages/Agents'
@@ -27,6 +28,13 @@ type Page = (typeof NAV)[number]['id'] | 'simulator'
 export default function App() {
   const [page, setPage] = useState<Page>('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [pendingIntents, setPendingIntents] = useState(0)
+
+  useEffect(() => {
+    api.getPaymentIntents(USER_ID)
+      .then((intents) => setPendingIntents(intents.filter((i: any) => i.status === 'pending').length))
+      .catch(() => {})
+  }, [page])
 
   const navigate = (id: Page) => {
     setPage(id)
@@ -67,6 +75,9 @@ export default function App() {
             >
               <span className="text-base w-5 text-center">{item.icon}</span>
               {item.label}
+              {item.id === 'payments' && pendingIntents > 0 && (
+                <span className="ml-auto text-[10px] font-bold bg-amber-500 text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{pendingIntents}</span>
+              )}
             </button>
           ))}
         </nav>

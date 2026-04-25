@@ -23,6 +23,51 @@ from app.schemas.schemas import (
 router = APIRouter(tags=["Payments & Transfers"])
 
 
+@router.get("/users/{user_id}/payment-intents")
+def list_payment_intents(user_id: int, db: Session = Depends(get_db)):
+    """List all payment instructions for a user, including agent-created ones."""
+    _require_user(db, user_id)
+    instructions = (
+        db.query(PaymentInstruction)
+        .filter(PaymentInstruction.user_id == user_id)
+        .order_by(PaymentInstruction.created_at.desc())
+        .all()
+    )
+    result = []
+    for pi in instructions:
+        account = db.query(BankAccount).filter(BankAccount.id == pi.from_account_id).first()
+        result.append({
+            "id": pi.id,
+            "payee_name": pi.payee_name,
+            "amount": pi.amount,
+            "reference": pi.reference,
+            "status": pi.status.value if hasattr(pi.status, 'value') else str(pi.status),
+            "from_account": account.name if account else f"Account #{pi.from_account_id}",
+            "agent_run_id": pi.agent_run_id,
+            "created_at": pi.created_at.isoformat() if pi.created_at else None,
+        })
+    return result
+
+
+@router.put("/users/{user_id}/payment-intents/{intent_id}/execute")
+def execute_payment_intent(user_id: int, intent_id: int, db: Session = Depends(get_db)):
+    """Execute a pending payment intent (simulated)."""
+    _require_user(db, user_id)
+    pi = db.query(PaymentInstruction).filter(
+        PaymentInstruction.id == intent_id, PaymentInstruction.user_id == user_id
+    ).first()
+    if not pi:
+        raise HTTPException(404, "Payment intent not found")
+
+    account = db.query(BankAccount).filter(BankAccount.id == pi.from_account_id).first()
+    if account and account.balance >= pi.amount:
+        account.balance -= pi.amount
+
+    pi.status = InstructionStatus.SIMULATED
+    db.commit()
+    return {"status": "executed", "id": pi.id, "amount": pi.amount, "payee_name": pi.payee_name}
+
+
 @router.post("/users/{user_id}/payments", response_model=InstructionOut, status_code=201)
 def create_payment(user_id: int, payload: PaymentRequest, db: Session = Depends(get_db)):
     _require_user(db, user_id)

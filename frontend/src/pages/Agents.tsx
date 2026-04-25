@@ -360,21 +360,52 @@ export default function Agents({ userId }: { userId: number }) {
   )
 }
 
-function formatAction(a: any): { payee: string; amount: string; description: string; params: any } {
+const TOOL_DISPLAY: Record<string, { label: string; icon: string }> = {
+  create_payment_instruction: { label: 'Payment created', icon: '💳' },
+  transfer_between_accounts: { label: 'Transfer initiated', icon: '🔄' },
+  create_direct_debit: { label: 'Direct debit set up', icon: '📋' },
+  generate_alert: { label: 'Alert raised', icon: '🔔' },
+  request_user_approval: { label: 'Approval requested', icon: '⏳' },
+  analyse_transactions: { label: 'Transactions analysed', icon: '📊' },
+  analyse_affordability: { label: 'Affordability checked', icon: '📈' },
+  detect_subscriptions: { label: 'Subscriptions scanned', icon: '🔍' },
+  scan_emails: { label: 'Emails scanned', icon: '📧' },
+  detect_invoices: { label: 'Invoices detected', icon: '📄' },
+}
+
+function formatAction(a: any): { payee: string; amount: string; description: string; detail: string; icon: string; params: any } {
+  const tool = a.tool || ''
+  const display = TOOL_DISPLAY[tool] || { label: tool, icon: '⚡' }
+  const params = a.params || {}
+  const result = a.result || {}
+
+  const payee = params.payee || params.payee_name || params.supplier_name || result.payee_name || ''
+  const amount = params.amount || result.amount || ''
+  const reference = params.reference || result.reference || ''
+
   if (a.description) {
     const match = a.description.match(/payment.*?for\s+(.+?)\s+for\s+£([\d,.]+)/i)
-    if (match) return { payee: match[1], amount: match[2], description: a.description, params: a.params || a }
-    return { payee: '', amount: '', description: a.description, params: a.params || a }
+    if (match) return { payee: match[1], amount: match[2], description: a.description, detail: '', icon: display.icon, params }
+    return { payee, amount: amount ? `${amount}` : '', description: a.description, detail: '', icon: display.icon, params }
   }
-  if (a.params) {
-    return {
-      payee: a.params.payee || a.params.payee_name || '',
-      amount: a.params.amount ? `${a.params.amount}` : '',
-      description: `${a.tool || 'Action'}: ${a.params.payee || a.params.payee_name || 'Unknown'}`,
-      params: a.params,
-    }
+
+  let desc = display.label
+  if (payee) desc += ` for ${payee}`
+  if (amount) desc += ` — £${Number(amount).toLocaleString('en-GB', { minimumFractionDigits: 2 })}`
+
+  let detail = ''
+  if (tool === 'generate_alert') {
+    const msg = params.message || params.alert_message || result.message || params.reason || ''
+    desc = `${display.label}: ${msg || (payee ? `Flagged ${payee}` : 'System notification')}`
+    detail = msg
   }
-  return { payee: '', amount: '', description: JSON.stringify(a), params: a }
+  if (tool === 'request_user_approval') {
+    desc = `${display.label}: ${params.reason || params.message || (payee ? `Review ${payee}` : 'Action needs review')}`
+  }
+
+  if (reference) detail = detail ? `${detail} (Ref: ${reference})` : `Ref: ${reference}`
+
+  return { payee, amount: amount ? `${amount}` : '', description: desc, detail, icon: display.icon, params }
 }
 
 function AgentResultUI({ result, onDismiss }: { result: any; onDismiss: () => void }) {
@@ -451,9 +482,12 @@ function AgentResultUI({ result, onDismiss }: { result: any; onDismiss: () => vo
             return (
               <div key={i} className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-                  <span className="text-emerald-600 text-sm">✓</span>
+                  <span className="text-sm">{action.icon}</span>
                 </div>
-                <p className="text-sm text-emerald-800 flex-1">{action.description}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-emerald-800">{action.description}</p>
+                  {action.detail && <p className="text-xs text-emerald-600 mt-0.5">{action.detail}</p>}
+                </div>
               </div>
             )
           })}
@@ -477,6 +511,7 @@ function AgentResultUI({ result, onDismiss }: { result: any; onDismiss: () => vo
                       <p className={`text-sm font-medium ${isApproved ? 'text-emerald-800' : 'text-gray-800'}`}>
                         {action.description}
                       </p>
+                      {action.detail && !isApproved && <p className="text-xs text-gray-500 mt-0.5">{action.detail}</p>}
                       {isApproved && <p className="text-xs text-emerald-600 mt-1">Payment approved and will be processed</p>}
                     </div>
                   </div>

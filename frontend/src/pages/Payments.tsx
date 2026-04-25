@@ -12,14 +12,16 @@ type Recipient = {
 export default function Payments({ userId }: { userId: number }) {
   const [accounts, setAccounts] = useState<any[]>([])
   const [transactions, setTransactions] = useState<any[]>([])
-  const [tab, setTab] = useState<'payment' | 'transfer' | 'dd' | 'recipients'>('payment')
+  const [paymentIntents, setPaymentIntents] = useState<any[]>([])
+  const [tab, setTab] = useState<'intents' | 'payment' | 'transfer' | 'dd' | 'recipients'>('intents')
   const [result, setResult] = useState<any>(null)
 
-  useEffect(() => {
-    Promise.all([api.getAccounts(userId), api.getTransactions(userId)])
-      .then(([a, t]) => { setAccounts(a); setTransactions(t) })
+  const loadAll = () => {
+    Promise.all([api.getAccounts(userId), api.getTransactions(userId), api.getPaymentIntents(userId)])
+      .then(([a, t, pi]) => { setAccounts(a); setTransactions(t); setPaymentIntents(pi) })
       .catch(console.error)
-  }, [userId])
+  }
+  useEffect(loadAll, [userId])
 
   const recipients = useMemo<Recipient[]>(() => {
     const map = new Map<string, { count: number; total: number; lastDate: string }>()
@@ -41,29 +43,52 @@ export default function Payments({ userId }: { userId: number }) {
       .sort((a, b) => b.total - a.total)
   }, [transactions])
 
-  const TABS = [
-    ['payment', 'Payment'],
+  const pendingIntents = paymentIntents.filter((pi) => pi.status === 'pending')
+
+  const TABS: [string, string][] = [
+    ['intents', `Payment Intents`],
+    ['payment', 'New Payment'],
     ['transfer', 'Transfer'],
     ['dd', 'Direct Debit'],
     ['recipients', 'Recipients'],
-  ] as const
+  ]
 
   return (
     <div className="space-y-6">
-      <Header title="Payments & Transfers" subtitle="Simulated financial actions" />
+      <Header title="Payments & Transfers" subtitle="Manage payment intents, transfers, and direct debits" />
+
+      {pendingIntents.length > 0 && tab !== 'intents' && (
+        <button
+          onClick={() => setTab('intents')}
+          className="w-full bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-3 hover:bg-amber-100 transition-colors"
+        >
+          <span className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-sm">⏳</span>
+          <div className="text-left flex-1">
+            <p className="text-sm font-medium text-amber-800">{pendingIntents.length} payment intent{pendingIntents.length !== 1 ? 's' : ''} awaiting action</p>
+            <p className="text-xs text-amber-600">Created by AI agents — click to review</p>
+          </div>
+          <span className="text-amber-500 text-sm">→</span>
+        </button>
+      )}
 
       <div className="flex gap-1 bg-white border border-gray-200 rounded-lg p-1 w-fit overflow-x-auto max-w-full shadow-sm">
         {TABS.map(([id, label]) => (
           <button
             key={id}
-            onClick={() => { setTab(id); setResult(null) }}
-            className={`px-4 py-1.5 rounded text-sm font-medium transition-colors ${tab === id ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+            onClick={() => { setTab(id as typeof tab); setResult(null) }}
+            className={`px-4 py-1.5 rounded text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-1.5 ${tab === id ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
           >
             {label}
+            {id === 'intents' && paymentIntents.length > 0 && (
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${tab === 'intents' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-700'}`}>
+                {paymentIntents.length}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
+      {tab === 'intents' && <PaymentIntents intents={paymentIntents} userId={userId} onUpdate={loadAll} />}
       {tab === 'payment' && <PaymentForm userId={userId} accounts={accounts} onResult={setResult} />}
       {tab === 'transfer' && <TransferForm userId={userId} accounts={accounts} onResult={setResult} />}
       {tab === 'dd' && <DirectDebitForm userId={userId} accounts={accounts} onResult={setResult} />}
@@ -93,6 +118,89 @@ export default function Payments({ userId }: { userId: number }) {
           ))}
         </div>
       </Section>
+    </div>
+  )
+}
+
+function PaymentIntents({ intents, userId, onUpdate }: { intents: any[]; userId: number; onUpdate: () => void }) {
+  const [executingId, setExecutingId] = useState<number | null>(null)
+
+  const handleExecute = async (intentId: number) => {
+    setExecutingId(intentId)
+    try {
+      await api.executePaymentIntent(userId, intentId)
+      onUpdate()
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setExecutingId(null)
+    }
+  }
+
+  if (intents.length === 0) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8 text-center space-y-2">
+        <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto">
+          <span className="text-xl">📋</span>
+        </div>
+        <p className="text-sm text-gray-500 font-medium">No payment intents</p>
+        <p className="text-xs text-gray-400">Payment intents are created when AI agents detect invoices or schedule payments.</p>
+      </div>
+    )
+  }
+
+  const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
+    pending: { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500' },
+    simulated: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+    executed: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500' },
+    failed: { bg: 'bg-rose-50', text: 'text-rose-700', dot: 'bg-rose-500' },
+  }
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+        <p className="text-xs text-gray-400 uppercase font-semibold tracking-wider">Payment Intents</p>
+        <p className="text-xs text-gray-400">{intents.length} total</p>
+      </div>
+      <div className="divide-y divide-gray-100">
+        {intents.map((pi) => {
+          const style = STATUS_STYLES[pi.status] || STATUS_STYLES.pending
+          const isPending = pi.status === 'pending'
+          return (
+            <div key={pi.id} className="px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                  <span className="text-lg">💳</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-800">{pi.payee_name}</p>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <span className="text-xs text-gray-400">{pi.from_account}</span>
+                    {pi.reference && <span className="text-xs text-gray-300">· Ref: {pi.reference}</span>}
+                    {pi.agent_run_id && <span className="text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-full">AI created</span>}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <p className="text-sm font-semibold text-gray-900">£{Number(pi.amount).toLocaleString('en-GB', { minimumFractionDigits: 2 })}</p>
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${style.bg} ${style.text}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+                  {pi.status === 'simulated' ? 'processed' : pi.status}
+                </span>
+                {isPending && (
+                  <button
+                    onClick={() => handleExecute(pi.id)}
+                    disabled={executingId === pi.id}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 text-white text-xs font-medium rounded-lg transition-colors shadow-sm"
+                  >
+                    {executingId === pi.id ? 'Processing...' : 'Execute'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

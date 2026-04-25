@@ -85,6 +85,10 @@ export const api = {
     }),
 
   // Payments
+  getPaymentIntents: (userId: number) =>
+    request<any[]>(`/users/${userId}/payment-intents`),
+  executePaymentIntent: (userId: number, intentId: number) =>
+    request<any>(`/users/${userId}/payment-intents/${intentId}/execute`, { method: 'PUT' }),
   createPayment: (userId: number, data: any) =>
     request<any>(`/users/${userId}/payments`, { method: 'POST', body: JSON.stringify(data) }),
   createTransfer: (userId: number, data: any) =>
