@@ -11,13 +11,25 @@ AI-powered personal finance platform for the UK. Connect your bank via Open Bank
 
 ## Quick Start
 
-### Backend
+### With Docker (Recommended)
+
+```bash
+cp .env.example backend/.env
+# Fill in OPENAI_API_KEY and TRUELAYER_* in backend/.env
+
+docker compose up --build
+```
+
+Backend runs at http://localhost:8000
+
+### Manual
 
 ```bash
 cd backend
 cp .env.example .env
 # Fill in .env with your API keys
 pip install -r requirements.txt
+# Start PostgreSQL separately
 python -m app.main
 ```
 
