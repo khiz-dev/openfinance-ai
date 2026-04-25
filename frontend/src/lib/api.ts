@@ -66,6 +66,17 @@ export const api = {
       body: JSON.stringify({ action }),
     }),
 
+  // Invoices
+  getInvoices: (userId: number, status?: string) =>
+    request<any[]>(`/users/${userId}/invoices${status ? `?status=${status}` : ''}`),
+  getInvoiceStats: (userId: number) =>
+    request<any>(`/users/${userId}/invoices/stats/summary`),
+  updateInvoiceStatus: (userId: number, invoiceId: number, data: { status: string; paid_from_account_id?: number; payment_reference?: string }) =>
+    request<any>(`/users/${userId}/invoices/${invoiceId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
   // Chat
   chat: (userId: number, message: string, history: { role: string; content: string }[] = []) =>
     request<{ reply: string; data_referenced: string[]; suggested_agent?: { id: number; name: string; description: string } | null }>(`/users/${userId}/chat`, {

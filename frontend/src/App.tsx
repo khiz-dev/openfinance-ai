@@ -5,6 +5,7 @@ import Agents from './pages/Agents'
 import Chat from './pages/Chat'
 import { SimulatorWidget } from './pages/Simulator'
 import Payments from './pages/Payments'
+import Invoices from './pages/Invoices'
 import Integrations from './pages/Integrations'
 import AgentRuns from './pages/AgentRuns'
 
@@ -14,6 +15,7 @@ const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: '◈' },
   { id: 'agents', label: 'AI Agents', icon: '⚙' },
   { id: 'chat', label: 'Ask AI', icon: '💬' },
+  { id: 'invoices', label: 'Invoices', icon: '📋' },
   { id: 'payments', label: 'Payments', icon: '£' },
   { id: 'integrations', label: 'Integrations', icon: '⟐' },
   { id: 'accounts', label: 'Accounts', icon: '◎' },
@@ -86,6 +88,7 @@ export default function App() {
           {page === 'accounts' && <Accounts userId={USER_ID} />}
           {page === 'agents' && <Agents userId={USER_ID} />}
           {page === 'chat' && <Chat userId={USER_ID} />}
+          {page === 'invoices' && <Invoices userId={USER_ID} />}
           {page === 'activity' && <AgentRuns userId={USER_ID} />}
           {page === 'payments' && <Payments userId={USER_ID} />}
           {page === 'integrations' && <Integrations userId={USER_ID} />}

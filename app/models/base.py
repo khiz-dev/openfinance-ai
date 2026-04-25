@@ -51,6 +51,14 @@ class InstructionStatus(str, enum.Enum):
     FAILED = "failed"
 
 
+class InvoiceStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    PAID = "paid"
+    OVERDUE = "overdue"
+    REJECTED = "rejected"
+
+
 class AgentRunStatus(str, enum.Enum):
     RUNNING = "running"
     COMPLETED = "completed"
@@ -78,6 +86,7 @@ class User(Base):
     subscriptions = relationship("Subscription", back_populates="user", cascade="all, delete-orphan")
     audit_logs = relationship("AuditLog", back_populates="user", cascade="all, delete-orphan")
     approved_suppliers = relationship("ApprovedSupplier", back_populates="user", cascade="all, delete-orphan")
+    invoices = relationship("Invoice", back_populates="user", cascade="all, delete-orphan")
 
 
 # ── Bank Account ───────────────────────────────────────────────────────
@@ -300,3 +309,28 @@ class AuditLog(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="audit_logs")
+
+
+# ── Invoice ───────────────────────────────────────────────────────────
+
+class Invoice(Base):
+    __tablename__ = "invoices"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    invoice_number = Column(String, nullable=False)
+    supplier_name = Column(String, nullable=False)
+    supplier_email = Column(String, nullable=True)
+    amount = Column(Float, nullable=False)
+    currency = Column(String, default="GBP")
+    due_date = Column(DateTime, nullable=True)
+    status = Column(Enum(InvoiceStatus), default=InvoiceStatus.PENDING)
+    paid_at = Column(DateTime, nullable=True)
+    paid_from_account_id = Column(Integer, ForeignKey("bank_accounts.id"), nullable=True)
+    payment_reference = Column(String, nullable=True)
+    description = Column(String, nullable=True)
+    source = Column(String, default="email")  # email, manual, agent
+    agent_run_id = Column(Integer, ForeignKey("agent_runs.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="invoices")

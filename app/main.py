@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import init_db
-from app.routers import agents, audit, chat, emails, payments, simulator, users
+from app.routers import agents, audit, chat, emails, invoices, payments, simulator, users
 from app.seed import seed_database
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -32,6 +32,7 @@ app.include_router(users.router)
 app.include_router(agents.router)
 app.include_router(chat.router)
 app.include_router(payments.router)
+app.include_router(invoices.router)
 app.include_router(emails.router)
 app.include_router(simulator.router)
 app.include_router(audit.router)

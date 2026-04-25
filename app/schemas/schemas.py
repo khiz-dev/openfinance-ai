@@ -248,6 +248,34 @@ class AuditLogOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# ── Invoice ──────────────────────────────────────────────────────────
+
+class InvoiceOut(BaseModel):
+    id: int
+    user_id: int
+    invoice_number: str
+    supplier_name: str
+    supplier_email: str | None
+    amount: float
+    currency: str
+    due_date: datetime | None
+    status: str
+    paid_at: datetime | None
+    paid_from_account_id: int | None
+    payment_reference: str | None
+    description: str | None
+    source: str
+    agent_run_id: int | None
+    created_at: datetime
+    model_config = {"from_attributes": True}
+
+
+class InvoiceStatusUpdate(BaseModel):
+    status: str
+    paid_from_account_id: int | None = None
+    payment_reference: str | None = None
+
+
 # ── Chat ─────────────────────────────────────────────────────────────
 
 class ChatRequest(BaseModel):

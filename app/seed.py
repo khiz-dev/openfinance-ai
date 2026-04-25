@@ -20,6 +20,8 @@ from app.models.base import (
     EmailConnection,
     EmailMessage,
     ExecutionMode,
+    Invoice,
+    InvoiceStatus,
     Subscription,
     Transaction,
     TriggerType,
@@ -271,6 +273,77 @@ def _seed(db: Session) -> None:
         ApprovedSupplier(user_id=user.id, name="PrintMax Ltd", email="accounts@printmax.co.uk", payment_account_id=monzo_expenses.id, max_auto_pay=750.00),
     ]
     db.add_all(suppliers)
+
+    # ── Invoices ───────────────────────────────────────────────────────
+
+    invoices_data = [
+        Invoice(
+            user_id=user.id, invoice_number="CT-2026-0089", supplier_name="CloudTech Solutions",
+            supplier_email="billing@cloudtechsolutions.com", amount=2_800.00, currency="GBP",
+            due_date=now + timedelta(days=5), status=InvoiceStatus.PAID,
+            paid_at=now - timedelta(days=2), paid_from_account_id=hsbc_current.id,
+            payment_reference="CT-0089", description="IT Support Services — April 2026", source="email",
+        ),
+        Invoice(
+            user_id=user.id, invoice_number="SN-4521", supplier_name="SecureNet Systems",
+            supplier_email="accounts@securenet.co.uk", amount=1_200.00, currency="GBP",
+            due_date=now + timedelta(days=3), status=InvoiceStatus.PAID,
+            paid_at=now - timedelta(days=1), paid_from_account_id=hsbc_current.id,
+            payment_reference="SN-4521", description="Managed Security Services — April 2026", source="email",
+        ),
+        Invoice(
+            user_id=user.id, invoice_number="DF-2026-112", supplier_name="DataFlow Analytics",
+            supplier_email="invoices@dataflowanalytics.io", amount=3_500.00, currency="GBP",
+            due_date=now + timedelta(days=10), status=InvoiceStatus.PENDING,
+            description="Data Platform License — April 2026", source="email",
+        ),
+        Invoice(
+            user_id=user.id, invoice_number="UV-001", supplier_name="Unknown Vendor Ltd",
+            supplier_email="billing@unknownvendor.com", amount=4_750.00, currency="GBP",
+            due_date=now - timedelta(days=1), status=InvoiceStatus.OVERDUE,
+            description="Consulting Services", source="email",
+        ),
+        Invoice(
+            user_id=user.id, invoice_number="CP-2026-034", supplier_name="CleanPro Services",
+            supplier_email="invoices@cleanpro.co.uk", amount=680.00, currency="GBP",
+            due_date=now + timedelta(days=15), status=InvoiceStatus.APPROVED,
+            description="Office Cleaning — April 2026", source="email",
+        ),
+        Invoice(
+            user_id=user.id, invoice_number="PM-8810", supplier_name="PrintMax Ltd",
+            supplier_email="accounts@printmax.co.uk", amount=450.00, currency="GBP",
+            due_date=now + timedelta(days=20), status=InvoiceStatus.PENDING,
+            description="Printing & Stationery Supply", source="email",
+        ),
+        Invoice(
+            user_id=user.id, invoice_number="WW-APR-2026", supplier_name="WeWork",
+            supplier_email="billing@wework.com", amount=3_500.00, currency="GBP",
+            due_date=now - timedelta(days=5), status=InvoiceStatus.PAID,
+            paid_at=now - timedelta(days=6), paid_from_account_id=hsbc_current.id,
+            payment_reference="WW-APR", description="Office Rent — Shoreditch — April 2026", source="manual",
+        ),
+        Invoice(
+            user_id=user.id, invoice_number="WW-MAR-2026", supplier_name="WeWork",
+            supplier_email="billing@wework.com", amount=3_500.00, currency="GBP",
+            due_date=now - timedelta(days=35), status=InvoiceStatus.PAID,
+            paid_at=now - timedelta(days=36), paid_from_account_id=hsbc_current.id,
+            payment_reference="WW-MAR", description="Office Rent — Shoreditch — March 2026", source="manual",
+        ),
+        Invoice(
+            user_id=user.id, invoice_number="AWS-APR-2026", supplier_name="Amazon Web Services",
+            supplier_email="noreply@aws.amazon.com", amount=2_340.00, currency="GBP",
+            due_date=now + timedelta(days=7), status=InvoiceStatus.APPROVED,
+            description="AWS Cloud Infrastructure — April 2026", source="email",
+        ),
+        Invoice(
+            user_id=user.id, invoice_number="HS-Q1-2026", supplier_name="HubSpot",
+            supplier_email="billing@hubspot.com", amount=2_670.00, currency="GBP",
+            due_date=now - timedelta(days=10), status=InvoiceStatus.PAID,
+            paid_at=now - timedelta(days=12), paid_from_account_id=monzo_expenses.id,
+            payment_reference="HS-Q1", description="HubSpot Pro — Q1 2026", source="email",
+        ),
+    ]
+    db.add_all(invoices_data)
 
     # ── Built-in Agents ───────────────────────────────────────────────
 
