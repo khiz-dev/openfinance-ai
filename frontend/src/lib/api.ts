@@ -104,6 +104,8 @@ export const api = {
   // Simulator
   simulateTransaction: (data: any) =>
     request<any>('/simulator/transactions', { method: 'POST', body: JSON.stringify(data) }),
+  simulateInvoice: (data: any) =>
+    request<any>('/simulator/invoices', { method: 'POST', body: JSON.stringify(data) }),
 
   // Audit
   getAuditLogs: (userId: number) => request<any[]>(`/users/${userId}/audit-logs`),

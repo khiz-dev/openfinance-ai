@@ -14,6 +14,8 @@ from app.database import get_db
 from app.models.base import (
     AgentDefinition,
     BankAccount,
+    Invoice,
+    InvoiceStatus,
     Transaction,
     TriggerType,
     User,
@@ -63,6 +65,43 @@ def simulate_transaction(payload: SimulateTransactionRequest, db: Session = Depe
         "transaction_id": txn.id,
         "new_balance": account.balance,
         "triggered_agents": triggered_agents,
+    }
+
+
+@router.post("/invoices")
+def simulate_invoice(payload: dict, db: Session = Depends(get_db)):
+    """Create a simulated invoice — mimics receiving one from a supplier."""
+    user_id = payload.get("user_id", 1)
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(404, "User not found")
+
+    from datetime import datetime, timedelta
+
+    due_days = payload.get("due_days", 30)
+    invoice = Invoice(
+        user_id=user_id,
+        invoice_number=payload.get("invoice_number", f"SIM-{int(datetime.utcnow().timestamp())}"),
+        supplier_name=payload.get("supplier_name", "Simulated Supplier"),
+        supplier_email=payload.get("supplier_email"),
+        amount=payload.get("amount", 0),
+        currency=payload.get("currency", "GBP"),
+        due_date=datetime.utcnow() + timedelta(days=due_days),
+        status=InvoiceStatus(payload.get("status", "pending")),
+        description=payload.get("description", ""),
+        source="simulator",
+    )
+    db.add(invoice)
+    db.commit()
+    db.refresh(invoice)
+
+    return {
+        "invoice_id": invoice.id,
+        "invoice_number": invoice.invoice_number,
+        "supplier_name": invoice.supplier_name,
+        "amount": invoice.amount,
+        "status": invoice.status.value,
+        "due_date": invoice.due_date.isoformat() if invoice.due_date else None,
     }
 
 
